@@ -1,7 +1,7 @@
 library(dplyr)
 library(tidyverse)
-library(data.table)
 library(stringr)
+library(fuzzyjoin)
 
 # import the file with API function
 source("reference.R")
@@ -84,7 +84,7 @@ duplicate <- duplicate[!(duplicate$title %in% found$title),]
 ###########################
 # now attempt to find exact values for other duplicated values
 # I try to match movies by comparing the release date calcaulatd by the box office data and the release date reported in Kaggle dataset
-duplicate$diff <- difftime(duplicate$release, duplicate$release_date)
+duplicate$diff <- abs(difftime(duplicate$release, duplicate$release_date))
 
 found2 <- duplicate %>% group_by(title, distributor) %>% 
   top_n(-1, diff)
@@ -155,10 +155,10 @@ for (i in 1:(length(m_list) %/% 40)) {
 
 assign(paste('m_list', length(m_list) %/% 40 + 1, sep = "_"), m_list[(length(m_list) %/% 40 *40 + 1):length(m_list)])
 
-get_api(m_list_1)
-get_api(m_list_2)
-get_api(m_list_3)
-get_api(m_list_4)
+# get_api(m_list_1)
+# get_api(m_list_2)
+# get_api(m_list_3)
+# get_api(m_list_4)
 get_api(m_list_5)
 get_api(m_list_6)
 get_api(m_list_7)
@@ -195,18 +195,32 @@ missing2_info <- m_info
 missing2_info <- missing2_info %>% 
   dplyr::select(title, id, original_title, release_date) %>% 
   arrange(release_date, title) %>% distinct() %>% 
-  filter(release_date != "" & release_date >= as.Date("2008-01-01"))
-
-# join the "missing2" and the list of movies "missing2_info" together 
-w_id <- left_join(missing2, missing2_info, by = "title")
+  filter(release_date != "") %>% 
+  filter(release_date >= as.Date("2008-01-01"))
 
 # eliminate "…" in the title of movies to facilitate matching
-w_id$title <- gsub("…", "", w_id$title)
+missing2$title <- gsub("…", "", missing2$title)
 
-# update the list of found movies
-found <- found %>% bind_rows(filter(w_id, is.na(id) == FALSE))
+# join the "missing2" and the list of movies "missing2_info" together 
+w_id <- regex_right_join(missing2_info, missing2, by = "title", ignore_case = FALSE)
 
-# 
+w_id$diff <- abs(difftime(w_id$release, w_id$release_date))
+
+# movies with found id in TMdb databast. need to use the id to get additional information for movies
+need_info2 <- w_id %>% group_by(title.y, distributor, release) %>% top_n(-1, diff) %>% 
+  ungroup() %>% 
+  dplyr::select(title.x, id, release, distributor, date, total_gross, days)
+
+# two movies are not found in TMdb database
+missing2.1 <- w_id %>% filter(is.na(id) == TRUE) %>% 
+  dplyr::select(title.y, release, distributor, date, total_gross, days)
+names(missing2.1)[1] <- "title" # change the column name
+
+# update the list of movies with complete information
+found <- found %>% bind_rows(missing2.1)
+rm(missing2)
+rm(missing2_info)
+rm(missing2.1)
 
 ###########################
 # find information for the list of movies in "missing3"
@@ -243,11 +257,8 @@ get_api(m_list_15)
 get_api(m_list_16)
 
 missing3_info <- m_info
-  
-# found <- duplicate %>% group_by(title, distributor) %>% 
-#   top_n(-1, diff) %>% group_by(title) %>% filter(n_distinct(distributor)==1) %>% 
-#   dplyr::select(-c(release_date, diff, date, production_companies)) %>% 
-#   bind_rows(found)
+
+###########################
 
 # update the list of duplicated values 
 duplicate <- duplicate[!(duplicate$title %in% found$title),]
@@ -262,7 +273,11 @@ w_id <- w_id %>% arrange(title, release)
 #######################
 save.image('envr.RData')
 
+save.image("04_21.RData")
+
 load("./envr.RData")
+
+load("04_21.RData") # load this file first
 #######################
 
 found1 <- w_id %>% filter(is.na(id) == FALSE) %>% filter(duplicated(title) == TRUE)
@@ -286,28 +301,6 @@ need_info <- as.data.frame(need_info)
 total <- as.data.frame(total)
 rest <- as.data.frame(rest)
 
-## first, work with movies before July 2017
-
-
-rest_duplicate <- filter(w_id, duplicated(w_id$title) == TRUE) %>% 
-  dplyr::select(c(title, distributor, release, date, total_gross, days)) %>% 
-  distinct()
-
-
-### work with data beofre July 2017
-
-w_id <- left_join(total, f_movie, by = "title") %>% 
-  arrange(title)
-
-duplicate <- filter(w_id, duplicated(title) == TRUE) %>% 
-  dplyr::select(title, distributor, release, total_gross, days) %>% 
-  distinct()
-
-missing <- filter(w_id, is.na(id) == TRUE) %>% 
-  dplyr::select(title, distributor, release, total_gross, days)
-
-found <- filter(w_id, duplicated(title) == FALSE) %>% 
-  filter(is.na(id) == FALSE)
   
 #####################
 
@@ -327,3 +320,8 @@ found <- filter(w_id, duplicated(title) == FALSE) %>%
 # found <- found %>% group_by(title, distributor) %>% 
 #   top_n(-1, diff) %>% 
 #   dplyr::select(-c(release_date, diff, date))
+
+# found <- duplicate %>% group_by(title, distributor) %>% 
+#   top_n(-1, diff) %>% group_by(title) %>% filter(n_distinct(distributor)==1) %>% 
+#   dplyr::select(-c(release_date, diff, date, production_companies)) %>% 
+#   bind_rows(found)
