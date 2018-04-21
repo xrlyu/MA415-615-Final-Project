@@ -18,7 +18,6 @@ options(stringsAsFactors = FALSE)
 bestpic <- read.delim("oscars_bestpic.txt", header = FALSE, col.names = "movie")
 bestpic$date <- seq(from = 2017, to = 2008, by = -1)
 
-
 # movie released on or before July 2017
 f_movie <- read.csv("./the-movies-dataset/movies_metadata.csv")
 f_movie <- f_movie %>% dplyr::select(title, genres, id, imdb_id, release_date, production_companies, vote_average) %>% 

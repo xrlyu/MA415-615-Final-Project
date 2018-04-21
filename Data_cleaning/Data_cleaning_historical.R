@@ -56,10 +56,15 @@ duplicate <- filter(w_id, duplicated(w_id$title) == TRUE) %>%
 # Kaggle dataset only has information for movies released on or before July 2017. To ensure the accuracy
 # of data, I would like to find out information for movies released on or after January 2017, and in this case,
 # I categorize these movies under another dataset named "missing". I need to find information for these movies through API later on.
-missing <- duplicate %>% filter(release >= as.Date("2017-01-01"))
+missing <- w_id %>% filter(release >= as.Date("2017-01-01")) %>% 
+  dplyr::select(title, distributor, release, date, total_gross, days)
 
-# update the list of duplicated movies by excluding "missing" dataset
+copy <- missing # save a copy of the list for future use
+
+# update the list of duplicated movies by excluding movies released on or after 2017-01-01
 duplicate <- duplicate %>% filter(release < as.Date("2017-01-01"))
+
+copy <- copy %>% bind_rows(duplicate) # save a copy of the list for future use
 
 # I first attempt to find exact movies through matching production companies
 found <- duplicate %>% 
@@ -117,33 +122,128 @@ missing2 <- duplicate %>% filter((title != "Water & Power")|(date != "2014-04-12
   filter((title != "Spices of Liberty") | (date == as.Date("2017-03-12"))) %>% 
   filter((title != "Not Today") | (date == as.Date("2013-07-25"))) %>% 
   filter((title != "Caged No More") | (date == as.Date("2016-02-11"))) %>% 
-  dplyr::select(-c(diff))
+  dplyr::select(-c(diff, genres, id, imdb_id, release_date, production_companies, vote_average))
 
 rm(duplicate)
+
+###########################
+# update the list of movies that are found in the Kaggle dataset
+found <- w_id %>% filter(is.na(id) == FALSE) %>% 
+  anti_join(copy) %>%
+  dplyr::select(-c(production_companies)) %>% 
+  bind_rows(found) %>% arrange(release)
+
+found$id <- as.integer(found$id)
 
 ###########################
 # list of movies that are not in Kaggle dataset and need additional information
 missing3 <- w_id %>% filter(release < as.Date("2017-01-01")) %>% 
   filter(is.na(id) == TRUE)
 
+###########################
 # download movie information for movies 
 # first for the list of movies in "missing"
 m_list <- sapply(missing$title,function(x) gsub("[[:punct:] ]+"," ", x)) # replace punctuations with blank space
 m_list <- sapply(m_list, function(x) gsub(" ","+", x)) # insert "+" between words
 
-get_api(m_list)
+# break down the large list for the convenience of downloading data (there is rate limit for downloads)
+for (i in 1:(length(m_list) %/% 40)) {
+  a <- (i-1)*40+1
+  b <- i*40
+  assign(paste('m_list',i,sep='_'), m_list[a:b])
+}
+
+assign(paste('m_list', length(m_list) %/% 40 + 1, sep = "_"), m_list[(length(m_list) %/% 40 *40 + 1):length(m_list)])
+
+get_api(m_list_1)
+get_api(m_list_2)
+get_api(m_list_3)
+get_api(m_list_4)
+get_api(m_list_5)
+get_api(m_list_6)
+get_api(m_list_7)
+get_api(m_list_8)
+get_api(m_list_9)
+get_api(m_list_10)
 
 missing_info <- m_info
 
+# clean the list of movies first
+missing_info <- missing_info %>% 
+  dplyr::select(title, id, original_title, release_date) %>% 
+  distinct() %>% filter(release_date >= as.Date("2016-01-01"))
+
+# join "missing" and "missing_info" together
+w_id <- left_join(missing, missing_info)
+
+# there still are movies that cannot be found
+missing.2 <- w_id %>% filter(is.na(id) == TRUE)
+
+###########################
 # then for the list of movies in "missing2"
 m_list <- sapply(missing2$title,function(x) gsub("[[:punct:] ]+"," ", x))
 m_list <- sapply(m_list, function(x) gsub(" ","+", x))
+
+# reset the varaible
+m_info <- data.frame()
 
 get_api(m_list)
 
 missing2_info <- m_info
 
+# clean the list of movies first
+missing2_info <- missing2_info %>% 
+  dplyr::select(title, id, original_title, release_date) %>% 
+  arrange(release_date, title) %>% distinct() %>% 
+  filter(release_date != "" & release_date >= as.Date("2008-01-01"))
 
+# join the "missing2" and the list of movies "missing2_info" together 
+w_id <- left_join(missing2, missing2_info, by = "title")
+
+# eliminate "…" in the title of movies to facilitate matching
+w_id$title <- gsub("…", "", w_id$title)
+
+# update the list of found movies
+found <- found %>% bind_rows(filter(w_id, is.na(id) == FALSE))
+
+# 
+
+###########################
+# find information for the list of movies in "missing3"
+m_list <- sapply(missing3$title,function(x) gsub("[[:punct:] ]+"," ", x))
+m_list <- sapply(m_list, function(x) gsub(" ","+", x))
+
+# break down the large list for the convenience of downloading data (there is rate limit for downloads)
+for (i in 1:(length(m_list) %/% 40)) {
+  a <- (i-1)*40+1
+  b <- i*40
+  assign(paste('m_list',i,sep='_'), m_list[a:b])
+}
+
+assign(paste('m_list', length(m_list) %/% 40 + 1, sep = "_"), m_list[(length(m_list) %/% 40 *40 + 1):length(m_list)])
+
+# reset the variable
+m_info <- data.frame()
+
+get_api(m_list_1)
+get_api(m_list_2)
+get_api(m_list_3)
+get_api(m_list_4)
+get_api(m_list_5)
+get_api(m_list_6)
+get_api(m_list_7)
+get_api(m_list_8)
+get_api(m_list_9)
+get_api(m_list_10)
+get_api(m_list_11)
+get_api(m_list_12)
+get_api(m_list_13)
+get_api(m_list_14)
+get_api(m_list_15)
+get_api(m_list_16)
+
+missing3_info <- m_info
+  
 # found <- duplicate %>% group_by(title, distributor) %>% 
 #   top_n(-1, diff) %>% group_by(title) %>% filter(n_distinct(distributor)==1) %>% 
 #   dplyr::select(-c(release_date, diff, date, production_companies)) %>% 
@@ -159,8 +259,9 @@ duplicate <- duplicate[!(duplicate$title %in% missing$title),]
 
 w_id <- w_id %>% arrange(title, release)
 
-save(duplicate, f_movie, found, total, w_id, missing, file = "envr.RData")
 #######################
+save.image('envr.RData')
+
 load("./envr.RData")
 #######################
 
@@ -174,13 +275,6 @@ b <- "Summit Entertainment,  }, Witt/Thomas Productions,  }, Depth of Field,  },
 
 str_detect(b,a)
 
-
-
-
-need_info <- total %>% filter(release >= as.Date("2017-01-01")) %>% 
-  dplyr::select(c(movie, distributor, release, date, total_gross, days)) %>% 
-  group_by(movie) %>% 
-  top_n(1, days)
 
 rest <- anti_join(total, need_info)
 
@@ -216,9 +310,6 @@ found <- filter(w_id, duplicated(title) == FALSE) %>%
   filter(is.na(id) == FALSE)
   
 #####################
-# save tidy data
-saveRDS(historical_tidy, "./Data/tidy_historical.rds")
-
 
 ####################
 
