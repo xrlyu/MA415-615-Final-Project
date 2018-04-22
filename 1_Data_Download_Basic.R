@@ -27,4 +27,4 @@ f_movie <- f_movie %>% dplyr::select(title, genres, id, imdb_id, release_date, p
 saveRDS(current, file = "./Data/current.rds")
 saveRDS(total, file = "./Data/total.rds")
 saveRDS(bestpic, file = "./Data/bestpic.rds")
-saveRDS(f_movie, file = "./Data/f_movie_1.rds")
+saveRDS(f_movie, file = "./Data/f_movie.rds")
