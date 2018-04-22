@@ -10,7 +10,7 @@ source("reference.R")
 
 # read data
 total <- readRDS("./Data/total.rds")
-f_movie <- readRDS("./Data/f_movie_1.rds")
+f_movie <- readRDS("./Data/f_movie.rds")
 
 # a complete list of movies released after 2008-01-01 (according to box office data)
 total <- total %>% filter(release >= as.Date("2008-01-01")) %>% 
