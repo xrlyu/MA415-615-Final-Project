@@ -57,7 +57,12 @@ duplicate <- filter(w_id, duplicated(w_id$title) == TRUE) %>%
 # of data, I would like to find out information for movies released on or after January 2017, and in this case,
 # I categorize these movies under another dataset named "missing". I need to find information for these movies through API later on.
 missing <- w_id %>% filter(release >= as.Date("2017-01-01")) %>% 
-  dplyr::select(title, distributor, release, date, total_gross, days)
+  dplyr::select(title, distributor, release, date, total_gross, days) %>% 
+  distinct()
+
+# two movies, "Is Genesis History?" and "The Last Dalai Lama?" need manual corrections because of gaps between two showing periods
+missing <- missing %>% filter((title != "The Last Dalai Lama?") | (release != as.Date("2017-07-08"))) %>% 
+  filter((title != "Is Genesis History?") | (release != as.Date("2017-02-24")))
 
 copy <- missing # save a copy of the list for future use
 
@@ -129,14 +134,14 @@ rm(duplicate)
 ###########################
 # update the list of movies that are found in the Kaggle dataset
 found <- w_id %>% filter(is.na(id) == FALSE) %>% 
-  anti_join(copy) %>%
+  anti_join(copy, by = c("title", "distributor", "release")) %>% 
   dplyr::select(-c(production_companies)) %>% 
-  bind_rows(found) %>% arrange(release)
+  bind_rows(found)
 
 found$id <- as.integer(found$id)
 
 ###########################
-# list of movies that are not in Kaggle dataset and need additional information
+# list of movies released before 2017-01-01 and are not in Kaggle dataset that need additional information
 missing3 <- w_id %>% filter(release < as.Date("2017-01-01")) %>% 
   filter(is.na(id) == TRUE)
 
@@ -155,10 +160,11 @@ for (i in 1:(length(m_list) %/% 40)) {
 
 assign(paste('m_list', length(m_list) %/% 40 + 1, sep = "_"), m_list[(length(m_list) %/% 40 *40 + 1):length(m_list)])
 
-# get_api(m_list_1)
-# get_api(m_list_2)
-# get_api(m_list_3)
-# get_api(m_list_4)
+# need to manually execute these codes to ensure that only 40 observations are searched for each 10sec interval
+get_api(m_list_1)
+get_api(m_list_2)
+get_api(m_list_3)
+get_api(m_list_4)
 get_api(m_list_5)
 get_api(m_list_6)
 get_api(m_list_7)
@@ -171,15 +177,222 @@ missing_info <- m_info
 # clean the list of movies first
 missing_info <- missing_info %>% 
   dplyr::select(title, id, original_title, release_date) %>% 
-  distinct() %>% filter(release_date >= as.Date("2016-01-01"))
+  distinct() %>% 
+  filter(release_date != "") %>% 
+  filter(release_date >= as.Date("2015-01-01"))
+
+# eliminate "…" in the title of movies to facilitate matching
+missing$title <- gsub("…", "", missing$title)
 
 # join "missing" and "missing_info" together
-w_id <- left_join(missing, missing_info)
+w_id <- regex_right_join(missing_info, missing, by = c(title = "title"), ignore_case = TRUE) %>% 
+  distinct()
+
+w_id$diff <- abs(difftime(w_id$release, w_id$release_date))
+
+need_info <- w_id %>% 
+  group_by(title.y, distributor, release) %>% 
+  top_n(-1, diff) %>% 
+  ungroup() %>% 
+  dplyr::select(title.x, title.y, id, release, distributor, date, total_gross, days)
+
+# the movie "Breathe" is associated with two different ids in TMdb database. need to find out the correct one manually
+need_info <- need_info %>% filter((title.x != "Breathe") | (id != 495179))
+
+# manually remove the incorrect row - for the movie "Kingsman: The Golden Circle"
+# note: regex_join joins by partial matching of strings. However, we need exact match for this one observation, and we manually remove it just for convenience
+need_info <- need_info %>% filter((title.x != "Kingsman: The Golden Circle") |(title.y != "Gold"))
+
+# further clean up the list
+need_info <- need_info %>% dplyr::select(-c(title.y))
 
 # there still are movies that cannot be found
-missing.2 <- w_id %>% filter(is.na(id) == TRUE)
+missing.1 <- w_id %>% filter(is.na(id) == TRUE) %>% 
+  dplyr::select(title.y, release, distributor, date, total_gross, days)
+names(missing.1)[1] <- "title" # change the column name
 
-###########################
+# attempt to match missing values 
+# remove any punctuation in the title of movies in both lists - "missing.1" and "missing_info" and replace with nubmers (for the convenience of redo)
+missing_info$title <- gsub("'", "3", missing_info$title)
+missing.1$title <- gsub("’", "3", missing.1$title)
+
+missing_info$title <- gsub(":", "9", missing_info$title)
+missing.1$title <- gsub(":", "9", missing.1$title)
+
+missing_info$title <- gsub("!", "7", missing_info$title)
+missing.1$title <- gsub("!", "7", missing.1$title)
+
+missing_info$title <- gsub("\\$", "6", missing_info$title)
+missing.1$title <- gsub("\\$", "6", missing.1$title)
+
+# then match these two lists again
+w_id <- regex_right_join(missing_info, missing.1, by = c(title = "title"), ignore_case = TRUE)
+
+# fixing title of movies
+w_id$title.x <- gsub("3", "'", w_id$title.x)
+w_id$title.y <- gsub("3", "'", w_id$title.y)
+
+w_id$title.x <- gsub("9", ":", w_id$title.x)
+w_id$title.y <- gsub("9", ":", w_id$title.y)
+
+w_id$title.x <- gsub("7", "!", w_id$title.x)
+w_id$title.y <- gsub("7", "!", w_id$title.y)
+
+w_id$title.x <- gsub("6", "$", w_id$title.x)
+w_id$title.y <- gsub("6", "$", w_id$title.y)
+
+# update the list of movies that have been found
+need_info <-  w_id %>% filter(is.na(id) == FALSE) %>% 
+  dplyr::select(title.x, id, release, distributor, date, total_gross, days) %>% 
+  bind_rows(need_info)
+
+# update the list of movies that are still missing
+missing.1 <- w_id %>% filter(is.na(id) == TRUE) %>% 
+  dplyr::select(title.y, release, distributor, date, total_gross, days)
+names(missing.1)[1] <- "title" # change the column name
+
+# another attemp to match movies: see if movies are in a foreign name (use original title)
+# also similar titles are modified to facilitate matching
+missing.1$title <- gsub("John Wick: Chapter Two", "John Wick: Chapter 2", missing.1$title)
+
+w_id <- regex_right_join(missing_info, missing.1, by = c(original_title = "title"), ignore_case = TRUE)
+w_id$title.x <- gsub("9", ":", w_id$title.x)
+
+# update the list of movies that have been found
+need_info <- w_id %>% filter(is.na(id) == FALSE) %>% 
+  dplyr::select(title.x, id, release, distributor, date, total_gross, days) %>% 
+  bind_rows(need_info)
+
+# update the list of movies that are still missing
+missing.1 <- w_id %>% filter(is.na(id) == TRUE) %>% 
+  dplyr::select(title.y, release, distributor, date, total_gross, days)
+names(missing.1)[1] <- "title" # change the column name
+
+# one movie "Padmavati" has the wrong name so I manually changed the title of the movie
+# the name of the movie should be "Padmaavat"
+# then get info for this movie from TMdb database
+missing.1$title <- gsub("Padmavati", "Padmaavat", missing.1$title)
+m_info <- data.frame()
+get_api("Padmaavat")
+
+# update the list of movies that have been found
+need_info <- m_info %>% dplyr::select(title, id) %>% 
+  inner_join(missing.1) %>% 
+  bind_rows(need_info)
+
+# update the list of movies that are still missing
+missing.1 <- missing.1 %>% filter(title != "Padmaavat")
+
+# remove "&" in the title of movies in the two lists with "and"
+missing.1$title <- gsub("&", "and", missing.1$title)
+missing_info$title <- gsub("&", "and", missing_info$title)
+
+# match two lists again
+w_id <- regex_right_join(missing_info, missing.1, by = c(title = "title"), ignore_case = TRUE)
+w_id$title.x <- gsub("Victoria and Abdul", "Victoria & Abdul", w_id$title.x)
+
+# update the list of movies that have been found
+need_info <- w_id %>% filter(is.na(id) == FALSE) %>% 
+  dplyr::select(title.x, id, release, distributor, date, total_gross, days) %>% 
+  bind_rows(need_info)
+
+# update the list of movies that are still missing
+missing.1 <- w_id %>% filter(is.na(id) == TRUE) %>% 
+  dplyr::select(title.y, release, distributor, date, total_gross, days)
+names(missing.1)[1] <- "title" # change the column name
+
+# two movies are found in Kaggle dataset but with a slightly different name
+# movie titles are manually modified to facilitate matching process
+missing.1$title <- gsub("T2: Trainspotting", "T2 Trainspotting", missing.1$title)
+missing.1$title <- gsub("Long Strange Trip: The Unto", "Long Strange Trip", missing.1$title)
+missing.1$title <- gsub("Tyler Perry's Boo 2! A Ma", "Boo! A Madea Halloween", missing.1$title)
+
+# join two datasets to match movies 
+w_id <- inner_join(missing.1, f_movie) %>% 
+  dplyr::select(-c(production_companies)) 
+w_id$id <- as.integer(w_id$id)
+
+# update the list of movies with complete information
+found <- found %>% bind_rows(w_id)
+
+# update the list of movies that are still missing
+missing.1 <- anti_join(missing.1, found)
+
+# modify titles of movies that have information in TMdb dataset to faciliate the merging process
+missing.1$title <- gsub("Guardians of the Galaxy Vol 2", "Guardians of the Galaxy", missing.1$title)
+missing.1$title <- gsub("The Wedding Party 2: Destin", "The Wedding Party 2", missing.1$title)
+missing.1$title <- gsub("Star Wars Ep. VIII: The Las", "Star Wars The Last Jedi", missing.1$title)
+missing.1$title <- gsub("‘85 The Greatest Team in", "85 The Greatest Team", missing.1$title)
+
+w_id <- regex_right_join(missing_info, missing.1, by = c(original_title = "title"), ignore_case = TRUE)
+
+# update the list of movies that have been found
+need_info <- w_id %>% filter(is.na(id) == FALSE) %>% 
+  dplyr::select(title.x, id, release, distributor, date, total_gross, days) %>% 
+  bind_rows(need_info)
+
+# update the list of movies that are still missing
+missing.1 <- w_id %>% filter(is.na(id) == TRUE) %>% 
+  dplyr::select(title.y, release, distributor, date, total_gross, days)
+names(missing.1)[1] <- "title" # change the column name
+
+# fix title of movies in the list "missing_info"
+missing_info$title <- gsub("3", "'", missing_info$title)
+missing_info$title <- gsub("9", ":", missing_info$title)
+missing_info$title <- gsub("[[:punct:] ]+", " ", missing_info$title)
+missing_info$title <- gsub("85 The Greatest Team in Pro Football History", "85 The Greatest Team", missing_info$title)
+missing_info$original_title <- gsub("120 battements par minute", "BPM (Beats per Minute)", missing_info$original_title)
+
+# match two lists
+w_id <- regex_right_join(missing_info, missing.1, by = c(title = "title"), ignore_case = TRUE)
+
+# update the list of movies that have been found
+need_info.1 <- w_id %>% filter(is.na(id) == FALSE) %>% 
+  dplyr::select(original_title, id, release, distributor, date, total_gross, days)
+names(need_info.1)[1] <- "title.x"
+need_info <- need_info %>% bind_rows(need_info.1)
+
+# update the list of movies that are still missing
+missing.1 <- w_id %>% filter(is.na(id) == TRUE) %>% 
+  dplyr::select(title.y, release, distributor, date, total_gross, days)
+names(missing.1)[1] <- "title" # change the column name
+
+# find the last matching value - need to do this manually because for unknown reason R cannot merge two datasets correctly
+greatest.team <- missing_info[str_which(missing_info$title,"85 The Greatest Team"),]
+w_id <- bind_rows(greatest.team, missing.1)
+w_id[7,1] <- w_id[1,3]
+w_id[7,2] <- w_id[1,2]
+w_id <- w_id %>% dplyr::select(title, id, release, distributor, date, total_gross, days) %>% 
+  filter(is.na(release) == FALSE)
+rm(greatest.team)
+
+# update the list of movies that need additional information
+need_info.1 <- w_id %>% filter(is.na(id) == FALSE)
+names(need_info.1)[1] <- "title.x"
+need_info <- need_info %>% bind_rows(need_info.1)
+rm(need_info.1)
+
+# update the list of movies that are still missing
+missing.1 <- w_id %>% filter(is.na(id) == TRUE) %>% 
+  dplyr::select(-id)
+
+# again, because regex_join joins by partial matching of strings and one observation is excluded erroneously
+# thus we include this missing value together with the list "missing.1"
+# there is no information for the movie "Gold" distributed by "Sony Pictures"
+
+missing.1 <- missing.1 %>% bind_rows(filter(missing, title == "Gold" & distributor == "Sony Pictures"))
+
+# include missing data and update the list of movies that have been found
+found <- found %>% full_join(missing.1)
+
+need_info <- need_info %>% replace_na(list(title.x = "", title = "")) %>% 
+  unite(title, title.x, title, sep = "")
+
+rm(missing)
+rm(missing_info)
+rm(missing.1)
+
+########################### 
 # then for the list of movies in "missing2"
 m_list <- sapply(missing2$title,function(x) gsub("[[:punct:] ]+"," ", x))
 m_list <- sapply(m_list, function(x) gsub(" ","+", x))
@@ -204,12 +417,15 @@ missing2$title <- gsub("…", "", missing2$title)
 # join the "missing2" and the list of movies "missing2_info" together 
 w_id <- regex_right_join(missing2_info, missing2, by = "title", ignore_case = FALSE)
 
+# match movies based on release date
 w_id$diff <- abs(difftime(w_id$release, w_id$release_date))
 
 # movies with found id in TMdb databast. need to use the id to get additional information for movies
 need_info2 <- w_id %>% group_by(title.y, distributor, release) %>% top_n(-1, diff) %>% 
   ungroup() %>% 
   dplyr::select(title.x, id, release, distributor, date, total_gross, days)
+
+names(need_info2)[1] <- "title" # change the column name
 
 # two movies are not found in TMdb database
 missing2.1 <- w_id %>% filter(is.na(id) == TRUE) %>% 
@@ -218,6 +434,7 @@ names(missing2.1)[1] <- "title" # change the column name
 
 # update the list of movies with complete information
 found <- found %>% bind_rows(missing2.1)
+
 rm(missing2)
 rm(missing2_info)
 rm(missing2.1)
@@ -239,6 +456,7 @@ assign(paste('m_list', length(m_list) %/% 40 + 1, sep = "_"), m_list[(length(m_l
 # reset the variable
 m_info <- data.frame()
 
+# need to manually execute these codes to ensure that only 40 observations are searched for each 10sec interval
 get_api(m_list_1)
 get_api(m_list_2)
 get_api(m_list_3)
@@ -256,19 +474,16 @@ get_api(m_list_14)
 get_api(m_list_15)
 get_api(m_list_16)
 
-missing3_info <- m_info
+# clean the list of movies first 
+missing3_info <- missing3_info %>% 
+  dplyr::select(title, id, original_title, release_date) %>% 
+  arrange(release_date, title) %>% distinct() %>% 
+  filter(release_date != "") %>% 
+  filter(release_date >= as.Date("2005-01-01")) %>% 
+  filter(release_date < as.Date('2018-01-01'))
 
 ###########################
 
-# update the list of duplicated values 
-duplicate <- duplicate[!(duplicate$title %in% found$title),]
-
-missing <- duplicate %>% filter(is.na(id) == TRUE) %>% dplyr::select(-diff)
-missing <- w_id %>% filter(is.na(id) == TRUE) %>% bind_rows(missing)
-
-duplicate <- duplicate[!(duplicate$title %in% missing$title),]
-
-w_id <- w_id %>% arrange(title, release)
 
 #######################
 save.image('envr.RData')
@@ -279,11 +494,6 @@ load("./envr.RData")
 
 load("04_21.RData") # load this file first
 #######################
-
-found1 <- w_id %>% filter(is.na(id) == FALSE) %>% filter(duplicated(title) == TRUE)
-found2 <- w_id[!(w_id$title %in% found1$title),] %>% filter(is.na(id) == FALSE)
-
-check_info <- found2 %>% filter(release >= as.Date("2017-01-01"))
 
 a <- "Summit Entertainment"
 b <- "Summit Entertainment,  }, Witt/Thomas Productions,  }, Depth of Field,  }, McLaughlin Films,  }, Lime Orchard Productions,  }"
@@ -303,6 +513,47 @@ rest <- as.data.frame(rest)
 
   
 #####################
+# use ids to extract additional information for movies in the list need_info
+# break down the long list into shorter lists to avoid download limits
+id_list <- need_info$id
+
+for (i in 1:(length(id_list) %/% 40)) {
+  a <- (i-1)*40+1
+  b <- i*40
+  assign(paste('id_list',i,sep='_'), id_list[a:b])
+}
+
+assign(paste('id_list', length(id_list) %/% 40 + 1, sep = "_"), id_list[(length(id_list) %/% 40 *40 + 1):length(id_list)])
+
+get_detail(id_list_1)
+get_detail(id_list_2)
+get_detail(id_list_3)
+get_detail(id_list_4)
+get_detail(id_list_5)
+get_detail(id_list_6)
+get_detail(id_list_7)
+get_detail(id_list_8)
+get_detail(id_list_9)
+
+detail_1 <- detail
+
+match_1 <- inner_join(need_info, detail_1)
+
+rm(need_info, detail_1)
+
+#####################
+# use ids to extract additional information for movies in the list need_info2
+# break down the long list into shorter lists to avoid download limits
+id_list <- need_info2$id
+
+detail <- data.frame()
+get_detail(id_list)
+
+detail_2 <- detail
+
+match2 <- inner_join(need_info2, detail_2)
+
+rm(need_info2, detail_2)
 
 ####################
 
