@@ -15,7 +15,7 @@ total$release <- total$date - (total$days - 1)
 
 # Academy Award for Best Picture
 options(stringsAsFactors = FALSE)
-bestpic <- read.delim("oscars_bestpic.txt", header = FALSE, col.names = "movie")
+bestpic <- read.delim("./Data/oscars_bestpic.txt", header = FALSE, col.names = "movie")
 bestpic$date <- seq(from = 2017, to = 2008, by = -1)
 
 # movie released on or before July 2017
