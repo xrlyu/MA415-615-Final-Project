@@ -1,6 +1,7 @@
 library(dplyr)
 library(tidyverse)
 library(stringr)
+# install.packages("fuzzyjoin")
 library(fuzzyjoin)
 
 # import the file with API function
