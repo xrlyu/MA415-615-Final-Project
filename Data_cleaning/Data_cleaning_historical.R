@@ -34,8 +34,6 @@ f_movie$production_companies <- gsub("\\{ ", "", f_movie$production_companies)
 # join the list of movies and Kaggle dataset together
 w_id <- left_join(total, f_movie, by = "title")
 
-###########################
-
 # find out duplicated values (movies with the same titile or TMbd id) in merged dataset
 duplicate <- filter(w_id, duplicated(w_id$title) == TRUE) %>%  
   dplyr::select(title) %>% distinct() %>% inner_join(w_id, by = "title") %>% distinct() %>% 
@@ -74,7 +72,6 @@ found <- found %>% filter((title != "The Walk")|(date != "2015-10-22"))
 # update the list of duplicated values
 duplicate <- duplicate[!(duplicate$title %in% found$title),]
 
-###########################
 # now attempt to find exact values for other duplicated values
 # I try to match movies by comparing the release date calcaulatd by the box office data and the release date reported in Kaggle dataset
 duplicate$diff <- abs(difftime(duplicate$release, duplicate$release_date))
@@ -119,7 +116,6 @@ missing2 <- duplicate %>% filter((title != "Water & Power")|(date != "2014-04-12
 
 rm(duplicate)
 
-###########################
 # update the list of movies that are found in the Kaggle dataset
 found <- w_id %>% filter(is.na(id) == FALSE) %>% 
   anti_join(copy, by = c("title", "distributor", "release")) %>% 
@@ -128,13 +124,11 @@ found <- w_id %>% filter(is.na(id) == FALSE) %>%
 
 found$id <- as.integer(found$id)
 
-###########################
 # list of movies released before 2017-01-01 and are not in Kaggle dataset that need additional information
 missing3 <- w_id %>% filter(release < as.Date("2017-01-01")) %>% 
   filter(is.na(id) == TRUE) %>% 
   dplyr::select(title, distributor, release, date, total_gross, days)
 
-###########################
 # download movie information
 # first for the list of movies in "missing"
 m_list <- sapply(missing$title,function(x) gsub("[[:punct:] ]+"," ", x)) # replace punctuations with blank space
@@ -383,7 +377,6 @@ rm(missing)
 rm(missing_info)
 rm(missing.1)
 
-###########################
 # then for the list of movies in "missing2"
 m_list <- sapply(missing2$title,function(x) gsub("[[:punct:] ]+"," ", x))
 m_list <- sapply(m_list, function(x) gsub(" ","+", x))
@@ -432,7 +425,6 @@ rm(missing2)
 rm(missing2_info)
 rm(missing2.1)
 
-###########################
 # find information for the list of movies in "missing3"
 m_list <- sapply(missing3$title,function(x) gsub("[[:punct:] ]+"," ", x))
 m_list <- sapply(m_list, function(x) gsub(" ","+", x))
@@ -476,6 +468,11 @@ missing3_info <- missing3_info %>%
   filter(release_date < as.Date('2018-01-01'))
 
 saveRDS(missing3_info, "./Data/missing3_info.rds")
+
+# slightly modify the name of movies to ensure accuracy
+missing3$title <- gsub("Atlas Shrugged: Part 1", "Atlas Shrugged: Part I", missing3$title)
+missing3$title <- gsub("Atlas Shrugged: Part II", "Atlas Shrugged II: The Strike", missing3$title)
+missing3$title <- gsub("Atlas Shrugged: Who Is John…", "Atlas Shrugged Part III: Who is John Galt?", missing3$title)
 
 # first by exact matching
 w_id <- left_join(missing3, missing3_info, by = "title")
@@ -630,8 +627,6 @@ missing3.1$title <- gsub("Tyler Perry s Boo A Made", "Boo 2! A Madea Halloween",
 missing3.1$title <- gsub("Chris and Don A Love Story", "Chris & Don: A Love Story", missing3.1$title)
 missing3.1$title <- gsub("America Imagine a World Wi", "America: Imagine the World Without Her", missing3.1$title)
 
-
-
 w_id <- left_join(missing3.1, missing3_info, by = "title")
 
 # update the list of movies that need additional info using id
@@ -671,6 +666,10 @@ found2 <- w_id %>% filter(is.na(id) == FALSE) %>%
   dplyr::select(-c(production_companies))
 found2$id <- as.integer(found2$id)
 found <- found2 %>% bind_rows(found)
+rm(found2)
+
+# the movie "Twilight" was in theater again for one day in 2010 and I removed that observation
+found <- found %>% filter((title != "Twilight") | (days != 1))
 
 # update the list of movies that are still missing
 missing3.1 <- w_id %>% filter(is.na(id) == TRUE) %>% 
@@ -840,16 +839,16 @@ missing3.1 <- inner_join(missing3.1,missing3, by = c("distributor" = "distributo
                                                      "days" = "days")) %>% 
   dplyr::select(title, distributor, release, date, total_gross, days)
 
-found <- found %>% bind_rows(missing3.1) %>% distinct() %>% 
-  filter((title != "Twilight") | (days != 1))
+found <- found %>% bind_rows(missing3.1)
 
+rm(copy)
+rm(need_info3.1)
 rm(missing_info_2)
 rm(missing3)
 rm(missing3_info)
 rm(missing3.1)
 rm(w_id)
 
-#####################
 # use ids to extract additional information for movies in the list need_info
 # break down the long list into shorter lists to avoid download limits
 id_list <- need_info$id
@@ -863,20 +862,20 @@ for (i in 1:(length(id_list) %/% 40)) {
 assign(paste('id_list', length(id_list) %/% 40 + 1, sep = "_"), id_list[(length(id_list) %/% 40 *40 + 1):length(id_list)])
 
 # need to manually execute these codes to avoid download rate limiting
-get_detail(id_list_1)
-get_detail(id_list_2)
-get_detail(id_list_3)
-get_detail(id_list_4)
-get_detail(id_list_5)
-get_detail(id_list_6)
-get_detail(id_list_7)
-get_detail(id_list_8)
-get_detail(id_list_9)
+# get_detail(id_list_1)
+# get_detail(id_list_2)
+# get_detail(id_list_3)
+# get_detail(id_list_4)
+# get_detail(id_list_5)
+# get_detail(id_list_6)
+# get_detail(id_list_7)
+# get_detail(id_list_8)
+# get_detail(id_list_9)
 
 detail_1 <- detail
 
 # match info from TMdb database with box office data
-match <- inner_join(need_info, detail_1)
+match <- inner_join(need_info, detail_1, by = c("id"= "id", "title" = "title"))
 
 rm(need_info, detail_1)
 
@@ -889,7 +888,8 @@ get_detail(id_list)
 
 detail_2 <- detail
 
-match <- inner_join(need_info2, detail_2) %>% bind_rows(match)
+match <- inner_join(need_info2, detail_2, by = c("id" = "id", "title" = "title")) %>% 
+  bind_rows(match)
 
 rm(need_info2, detail_2)
 
@@ -906,26 +906,37 @@ for (i in 1:(length(id_list) %/% 40)) {
 assign(paste('id_list', length(id_list) %/% 40 + 1, sep = "_"), id_list[(length(id_list) %/% 40 *40 + 1):length(id_list)])
 
 detail <- data.frame()
-get_detail(id_list_1)
-get_detail(id_list_2)
-get_detail(id_list_3)
-get_detail(id_list_4)
-get_detail(id_list_5)
-get_detail(id_list_6)
-get_detail(id_list_7)
-get_detail(id_list_8)
-get_detail(id_list_9)
-get_detail(id_list_10)
-get_detail(id_list_11)
-get_detail(id_list_12)
-get_detail(id_list_13)
-get_detail(id_list_14)
+# get_detail(id_list_1)
+# get_detail(id_list_2)
+# get_detail(id_list_3)
+# get_detail(id_list_4)
+# get_detail(id_list_5)
+# get_detail(id_list_6)
+# get_detail(id_list_7)
+# get_detail(id_list_8)
+# get_detail(id_list_9)
+# get_detail(id_list_10)
+# get_detail(id_list_11)
+# get_detail(id_list_12)
+# get_detail(id_list_13)
+# get_detail(id_list_14)
 
 detail_3 <- detail
 
-match <- inner_join(need_info3, detail_3) %>% bind_rows(match)
+match3 <- inner_join(need_info3, detail_3, by = c('id' = 'id')) %>% 
+  dplyr::select(-title.x)
+names(match3)[9] <- "title"
 
-rm(need_info3, detail_3)
+match <- match %>% bind_rows(match3)
+
+rm(need_info3, detail_3, match3)
+
+# the step of gathering data is done and some basic data cleaning is finished as well
+# need to further tidy/group data together to perform analysis - see file "tidy.R"
+
+# save objects for file "tidy.R"
+save(found, match, file = "./Data/clean.Rdata")
+
 
 ####################
 
@@ -946,13 +957,3 @@ rm(need_info3, detail_3)
 # separate the "genre" column for Kaggle dataset so that each column only contains one genre
 # f_movie <- f_movie %>% tidyr::separate(genres, c("g1", "g2", "g3", "g4", "g5", "g6", "g7", "g8"), sep="\\}",
 #                                         extra = "drop", fill = "right")
-
-
-###########################
-save.image('envr.RData')
-
-save.image("04_21.RData")
-
-load("./envr.RData")
-
-load("04_21.RData") # load this file first  (save data)
