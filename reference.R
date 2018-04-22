@@ -29,7 +29,15 @@ get_detail <- function(id_list) {
     this.raw.content <- rawToChar(dataset$content)
     this.content <- fromJSON(this.raw.content)
     data <- this.content[c(5, 7, 8, 22, 24, 25)] # only need information on genre, id, imdb_id, title, vote_average, vote_count
+    na_frame <- cbind(NA,NA)
+    data$genres <- if (is.null(dim(data$genres)) == TRUE) {
+      data$genres <- na_frame} else{
+        data$genres <- data$genres
+      }
     data$genres <- data$genres[,2]
+    data$imdb_id <- ifelse(is.null(data$imdb_id), NA, data$imdb_id)
+    data$vote_average <- ifelse(is.null(data$vote_average), NA, data$vote_average)
+    data$vote_count <- ifelse(is.null(data$vote_count), NA, data$vote_count)
     data <- as.data.frame(data)
     d_info <- rbind(d_info, data)
   }

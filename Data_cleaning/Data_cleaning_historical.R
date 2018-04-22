@@ -31,18 +31,6 @@ f_movie$production_companies <- gsub("'", "", f_movie$production_companies)
 f_movie$production_companies <- gsub("\\[|\\]", "", f_movie$production_companies)
 f_movie$production_companies <- gsub("\\{ ", "", f_movie$production_companies)
 
-# f_movie$genres <- gsub("'name':", "", f_movie$genres)
-# f_movie$genres <- gsub("'id':", "", f_movie$genres)
-# f_movie$genres <- gsub("[[:digit:]]+", "", f_movie$genres)
-# f_movie$genres <- gsub("'", "", f_movie$genres)
-# f_movie$genres <- gsub("\\[|\\]", "", f_movie$genres)
-# f_movie$genres <- gsub(" ", "", f_movie$genres)
-# f_movie$genres <- gsub("\\{,", "", f_movie$genres)
-
-# separate the "genre" column for Kaggle dataset so that each column only contains one genre
-# f_movie <- f_movie %>% tidyr::separate(genres, c("g1", "g2", "g3", "g4", "g5", "g6", "g7", "g8"), sep="\\}",
-#                                         extra = "drop", fill = "right")
-
 # join the list of movies and Kaggle dataset together
 w_id <- left_join(total, f_movie, by = "title")
 
@@ -143,10 +131,11 @@ found$id <- as.integer(found$id)
 ###########################
 # list of movies released before 2017-01-01 and are not in Kaggle dataset that need additional information
 missing3 <- w_id %>% filter(release < as.Date("2017-01-01")) %>% 
-  filter(is.na(id) == TRUE)
+  filter(is.na(id) == TRUE) %>% 
+  dplyr::select(title, distributor, release, date, total_gross, days)
 
 ###########################
-# download movie information for movies 
+# download movie information
 # first for the list of movies in "missing"
 m_list <- sapply(missing$title,function(x) gsub("[[:punct:] ]+"," ", x)) # replace punctuations with blank space
 m_list <- sapply(m_list, function(x) gsub(" ","+", x)) # insert "+" between words
@@ -161,18 +150,20 @@ for (i in 1:(length(m_list) %/% 40)) {
 assign(paste('m_list', length(m_list) %/% 40 + 1, sep = "_"), m_list[(length(m_list) %/% 40 *40 + 1):length(m_list)])
 
 # need to manually execute these codes to ensure that only 40 observations are searched for each 10sec interval
-get_api(m_list_1)
-get_api(m_list_2)
-get_api(m_list_3)
-get_api(m_list_4)
-get_api(m_list_5)
-get_api(m_list_6)
-get_api(m_list_7)
-get_api(m_list_8)
-get_api(m_list_9)
-get_api(m_list_10)
+# get_api(m_list_1)
+# get_api(m_list_2)
+# get_api(m_list_3)
+# get_api(m_list_4)
+# get_api(m_list_5)
+# get_api(m_list_6)
+# get_api(m_list_7)
+# get_api(m_list_8)
+# get_api(m_list_9)
+# get_api(m_list_10)
 
 missing_info <- m_info
+
+saveRDS(missing_info, "./Data/missing_info.rds")
 
 # clean the list of movies first
 missing_info <- missing_info %>% 
@@ -392,7 +383,7 @@ rm(missing)
 rm(missing_info)
 rm(missing.1)
 
-########################### 
+###########################
 # then for the list of movies in "missing2"
 m_list <- sapply(missing2$title,function(x) gsub("[[:punct:] ]+"," ", x))
 m_list <- sapply(m_list, function(x) gsub(" ","+", x))
@@ -400,9 +391,11 @@ m_list <- sapply(m_list, function(x) gsub(" ","+", x))
 # reset the varaible
 m_info <- data.frame()
 
-get_api(m_list)
+# get_api(m_list)
 
 missing2_info <- m_info
+
+saveRDS(missing2_info, "./Data/missing2_info.rds")
 
 # clean the list of movies first
 missing2_info <- missing2_info %>% 
@@ -457,22 +450,22 @@ assign(paste('m_list', length(m_list) %/% 40 + 1, sep = "_"), m_list[(length(m_l
 m_info <- data.frame()
 
 # need to manually execute these codes to ensure that only 40 observations are searched for each 10sec interval
-get_api(m_list_1)
-get_api(m_list_2)
-get_api(m_list_3)
-get_api(m_list_4)
-get_api(m_list_5)
-get_api(m_list_6)
-get_api(m_list_7)
-get_api(m_list_8)
-get_api(m_list_9)
-get_api(m_list_10)
-get_api(m_list_11)
-get_api(m_list_12)
-get_api(m_list_13)
-get_api(m_list_14)
-get_api(m_list_15)
-get_api(m_list_16)
+# get_api(m_list_1)
+# get_api(m_list_2)
+# get_api(m_list_3)
+# get_api(m_list_4)
+# get_api(m_list_5)
+# get_api(m_list_6)
+# get_api(m_list_7)
+# get_api(m_list_8)
+# get_api(m_list_9)
+# get_api(m_list_10)
+# get_api(m_list_11)
+# get_api(m_list_12)
+# get_api(m_list_13)
+# get_api(m_list_14)
+# get_api(m_list_15)
+# get_api(m_list_16)
 
 # clean the list of movies first 
 missing3_info <- missing3_info %>% 
@@ -481,6 +474,8 @@ missing3_info <- missing3_info %>%
   filter(release_date != "") %>% 
   filter(release_date >= as.Date("2005-01-01")) %>% 
   filter(release_date < as.Date('2018-01-01'))
+
+saveRDS(missing3_info, "./Data/missing3_info.rds")
 
 ###########################
 
@@ -492,26 +487,14 @@ save.image("04_21.RData")
 
 load("./envr.RData")
 
-load("04_21.RData") # load this file first
+load("04_21.RData") # load this file first  (save data)
 #######################
 
 a <- "Summit Entertainment"
 b <- "Summit Entertainment,  }, Witt/Thomas Productions,  }, Depth of Field,  }, McLaughlin Films,  }, Lime Orchard Productions,  }"
 
-str_detect(b,a)
+str_detect(b,a) # str_detect
 
-
-rest <- anti_join(total, need_info)
-
-names(need_info)[1] <- "title"
-names(total)[1] <- "title"
-names(rest)[1] <- "title"
-
-need_info <- as.data.frame(need_info)
-total <- as.data.frame(total)
-rest <- as.data.frame(rest)
-
-  
 #####################
 # use ids to extract additional information for movies in the list need_info
 # break down the long list into shorter lists to avoid download limits
@@ -541,7 +524,6 @@ match_1 <- inner_join(need_info, detail_1)
 
 rm(need_info, detail_1)
 
-#####################
 # use ids to extract additional information for movies in the list need_info2
 # break down the long list into shorter lists to avoid download limits
 id_list <- need_info2$id
@@ -576,3 +558,16 @@ rm(need_info2, detail_2)
 #   top_n(-1, diff) %>% group_by(title) %>% filter(n_distinct(distributor)==1) %>% 
 #   dplyr::select(-c(release_date, diff, date, production_companies)) %>% 
 #   bind_rows(found)
+
+
+# f_movie$genres <- gsub("'name':", "", f_movie$genres)
+# f_movie$genres <- gsub("'id':", "", f_movie$genres)
+# f_movie$genres <- gsub("[[:digit:]]+", "", f_movie$genres)
+# f_movie$genres <- gsub("'", "", f_movie$genres)
+# f_movie$genres <- gsub("\\[|\\]", "", f_movie$genres)
+# f_movie$genres <- gsub(" ", "", f_movie$genres)
+# f_movie$genres <- gsub("\\{,", "", f_movie$genres)
+
+# separate the "genre" column for Kaggle dataset so that each column only contains one genre
+# f_movie <- f_movie %>% tidyr::separate(genres, c("g1", "g2", "g3", "g4", "g5", "g6", "g7", "g8"), sep="\\}",
+#                                         extra = "drop", fill = "right")
