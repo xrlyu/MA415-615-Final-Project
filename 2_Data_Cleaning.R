@@ -937,24 +937,3 @@ rm(need_info3, detail_3, match3)
 
 # save objects for file "tidy.R"
 save(found, match, file = "./Data/clean.Rdata")
-
-
-####################
-
-# f_movie <- f_movie %>% tidyr::separate(production_companies, c("p1", "p2", "p3", "p4", "p5", 'p6','p7','p8',
-#                                                                 'p9','p10','p11','p12','p13','p14','p15','p16',
-#                                                                 'p17','p18','p19','p20','p21','p22','p23','p24',
-#                                                                 'p25','p26'), sep = "\\}, ", fill = "right")
-
-
-# f_movie$genres <- gsub("'name':", "", f_movie$genres)
-# f_movie$genres <- gsub("'id':", "", f_movie$genres)
-# f_movie$genres <- gsub("[[:digit:]]+", "", f_movie$genres)
-# f_movie$genres <- gsub("'", "", f_movie$genres)
-# f_movie$genres <- gsub("\\[|\\]", "", f_movie$genres)
-# f_movie$genres <- gsub(" ", "", f_movie$genres)
-# f_movie$genres <- gsub("\\{,", "", f_movie$genres)
-
-# separate the "genre" column for Kaggle dataset so that each column only contains one genre
-# f_movie <- f_movie %>% tidyr::separate(genres, c("g1", "g2", "g3", "g4", "g5", "g6", "g7", "g8"), sep="\\}",
-#                                         extra = "drop", fill = "right")

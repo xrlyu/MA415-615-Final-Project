@@ -1,5 +1,6 @@
 library(dplyr)
 library(tidyverse)
+library(lubridate)
 
 load("./Data/clean.Rdata")
 
@@ -27,11 +28,23 @@ full <- found %>% bind_rows(match)
 full$genres <- as.factor(full$genres)
 full$id <- as.character(full$id)
 
-full <- full %>% 
-  dplyr::select(title, id, imdb_id, genres, release, total_gross, vote_average, distributor, days) %>% 
-  arrange(release)
+# modify gross box office data to make it adjusted for inflation
+full$year <- year(full$release)
+full$month <- month(full$release)
+full$day <- 1
 
-# full is the complete list of movie ready for further analysis
+inflation <- read.csv("./Data/inflation rate.csv")
+names(inflation) <- c("year", "inflation")
+inflation$year <- year(inflation$year)
+inflation$inflation <- inflation$inflation/ 100
+full <- left_join(full, inflation, by = "year") %>% 
+  replace_na(list(inflation = 1.182197))
+
+full$gross <- full$total_gross * full$inflation
+full <- full %>% unite(date, year, month, day, sep = "-") %>% 
+  dplyr::select(-c(release, inflation, total_gross)) %>% 
+  dplyr::select(title, id, imdb_id, genres, date, gross, vote_average, distributor, days) %>% 
+  arrange(date)
 
 saveRDS(full, "./Data/tidy.rds")
 
