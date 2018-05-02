@@ -31,7 +31,6 @@ full$id <- as.character(full$id)
 # modify gross box office data to make it adjusted for inflation
 full$year <- year(full$release)
 full$month <- month(full$release)
-full$day <- 1
 
 inflation <- read.csv("./Data/inflation rate.csv")
 names(inflation) <- c("year", "inflation")
@@ -41,10 +40,11 @@ full <- left_join(full, inflation, by = "year") %>%
   replace_na(list(inflation = 1.182197))
 
 full$gross <- full$total_gross * full$inflation
-full <- full %>% unite(date, year, month, day, sep = "-") %>% 
-  dplyr::select(-c(release, inflation, total_gross)) %>% 
-  dplyr::select(title, id, imdb_id, genres, date, gross, vote_average, distributor, days) %>% 
-  arrange(date)
+full <- full %>% 
+  arrange(release) %>% 
+  dplyr::select(title, id, imdb_id, genres, year, month, gross, vote_average, distributor, days)
+
+# object "full" is the complete list of movies and now ready for analysis
 
 saveRDS(full, "./Data/tidy.rds")
 
