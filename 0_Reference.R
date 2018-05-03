@@ -4,6 +4,8 @@
 
 library(httr)
 library(jsonlite)
+library(boxoffice)
+library(tidyverse)
 
 # write a function to download data from TMdb website
 m_info <- data.frame()
@@ -48,3 +50,14 @@ get_detail <- function(id_list) {
 
 ## api
 ## 2c2d3eeeb39c7d6d18608fbdcd6407ad
+
+# for shiny app: write a function that would return then necessary box office table given specific date(s)
+get_box <- function(date) {
+  box <- boxoffice(date)
+  box %>% dplyr::select(c(movie, distributor, gross, total_gross, days)) %>% 
+    group_by(movie) %>% 
+    mutate(weekly_gross = sum(gross)) %>% 
+    top_n(1, days) %>% 
+    arrange(days) %>% 
+    dplyr::select(c(movie, distributor, gross, weekly_gross, total_gross, days))
+}
