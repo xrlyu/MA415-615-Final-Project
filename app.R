@@ -12,7 +12,8 @@ ui <- dashboardPage(
     sidebarMenu(
       menuItem("Real-time Box Office", tabName = "boxoffice", icon = icon("film", lib = "glyphicon")),
       menuItem("Detailed Reports", icon = icon("pencil", lib = "glyphicon"),
-               menuSubItem("General Analysis", tabName = "general_view", icon = icon("table")))
+               menuSubItem("General Analysis", tabName = "general_view", icon = icon("table")),
+               menuSubItem("Oscars Best Picture", tabName = "oscars", icon = icon('table')))
     )
   ),
   dashboardBody(
@@ -24,7 +25,7 @@ ui <- dashboardPage(
                 sidebarPanel(
                   conditionalPanel('input.dataset == "Create Your Own"',
                                    dateRangeInput('daterange', label = 'Select Date', start = Sys.Date()-4, end = Sys.Date()-2),
-                                   helpText("Box office data only available until two days prior to today."),
+                                   helpText("Box office data are only available until two days prior to today."),
                                    helpText("Please select a reasonable time range for short loading time."),
                                    checkboxGroupInput("show_vars_h", "Select Variables to Display",
                                                       choiceNames = c("distributor", "daily gross box office", "weekly gross box office", "total gross box office since first on view", "total number of days in theaters"),
@@ -70,6 +71,10 @@ ui <- dashboardPage(
                     withLoader(plotOutput("plot4"), type = "html", loader = "loader7"),
                     checkboxInput("line", label = "Add a smoonth line", value = FALSE)),
                 
+                tabBox(title = "Continuous Variables Analysis Based On Genre", width = 12,
+                       tabPanel("Box Office", withLoader(plotOutput("plot12"), type = "html", loader = "loader7")),
+                       tabPanel("Voting Score", withLoader(plotOutput("plot13"), type = "html", loader = "loader7"))),
+                
                 tabBox(title = "Number of Movies Released by Month & Year", 
                        tabPanel("By Year", withLoader(plotOutput("plot5"), type = "html", loader = "loader7")),
                        tabPanel("By Month", withLoader(plotOutput("plot6"), type = "html", loader = "loader7")),
@@ -83,7 +88,39 @@ ui <- dashboardPage(
                 mainPanel(h2("Detatiled Information"),
                           withLoader(DT::dataTableOutput("mytable3"), type = "html", loader = "pacman"))
 )
+              ),
+      # third tab item
+      tabItem(tabName = "oscars", 
+              fluidRow(titlePanel("Movies Awarded Oscars Best Picture"),
+                        box(title = "Box Office vs. Voting Score", status = "primary", solidHeader = TRUE,
+                             withLoader(plotOutput("plot7"), type = "html", loader = "loader6"),
+                             checkboxInput("line2", label = "Add a smooth line", value = FALSE)),
+                       
+                       box(title = "Inputs", status = "warning", solidHeader = TRUE,
+                           checkboxGroupInput("oscars_select_year", label = "Select Year(s)",
+                                              choices = seq(from = 2008, to = 2017, by = 1),
+                                              selected = seq(from = 2008, to = 2017, by = 1), inline = TRUE)),
+                      
+                       tabBox(title = "Detailed Analysis",
+                              tabPanel("By Month", withLoader(plotOutput("plot9"), type = "html", loader = "loader6")),
+                              tabPanel("By Genre", withLoader(plotOutput("plot8"), type = "html", loader = "loader6"))),
+                       
+                       tabBox(title = "What makes them distinct?", width = 10,
+                              tabPanel("Box office", withLoader(plotOutput("plot10"), type = "html", loader = "loader6"),
+                                       checkboxInput("yearly_box", label = "Add yearly average box office", value = FALSE),
+                                       checkboxInput("monthly_box", label = "Add monthly average box office", value = FALSE),
+                                       checkboxInput("monthly_all_box", label = "Add monthly average box office (of all times)", value = FALSE),
+                                       checkboxInput("year_high_box", label = "Add yearly highest gross box office", value = FALSE)),
+                              tabPanel("Voting Score", withLoader(plotOutput("plot11"), type = "html", loader = "loader6"),
+                                       checkboxInput("yearly", label = "Add yearly average box office", value = FALSE),
+                                       checkboxInput("monthly", label = "Add monthly average box office", value = FALSE),
+                                       checkboxInput("monthly_all", label = "Add monthly average box office (of all times)", value = FALSE),
+                                       checkboxInput("year_high", label = "Add yearly highest gross box office", value = FALSE))),
+                       
+                       mainPanel(h2("Detatiled Information"),
+                                 withLoader(DT::dataTableOutput("mytable4"), type = "html", loader = "pacman"))
               ))
+)
     )
   )
 
@@ -172,7 +209,7 @@ server <- function(input, output) {
       geom_bar(aes(fill = year)) +
       geom_text(stat='count', aes(label=..count..), size = 3, hjust = -0.5) +
       coord_flip() +
-      labs(x = "Genres", y ="Number of Movies")
+      labs(x = "Genres", y ="Number of Movies Released")
   })
   
   output$plot3 <- renderPlot({
@@ -196,7 +233,53 @@ server <- function(input, output) {
       geom_bar(aes(fill = month)) +
       geom_text(stat = 'count', aes(label = ..count..), size = 3, hjust= -0.5) +
       coord_flip() +
-      labs(x= "Genres", y = "Number of Movies")
+      labs(x= "Genres", y = "Number of Movies Released")
+  })
+  
+  output$plot12 <- renderPlot({
+    final2 <- final
+    final2$year <- as.character(final$year)
+    final2$month <- as.character(final$month)
+    final2$genres <- as.character(final$genres)
+    
+    input_y <- str_c(input$select_year, collapse = ", ")
+    input_m <- str_c(input$select_month, collapse = ", " )
+    input_g <- str_c(input$select_genres, collapse = ", ")
+    
+    final2 <- final2 %>% filter(str_detect(input_y, year)) %>% 
+      filter(str_detect(input_m, month)) %>% 
+      filter(str_detect(input_g, genres))
+    
+    final2$month <- fct_inorder(final2$month)
+    final2$year <- factor(final2$year) 
+    
+    ggplot(data = final2) +
+      geom_boxplot(aes(x = genres, y = gross, color = genres)) +
+      theme(axis.text.x = element_text(angle = 60, hjust = 1), legend.position = "none") +
+      labs(x = "Genres", y = "Gross Box Office")
+  })
+  
+  output$plot13 <- renderPlot({
+    final2 <- final
+    final2$year <- as.character(final$year)
+    final2$month <- as.character(final$month)
+    final2$genres <- as.character(final$genres)
+    
+    input_y <- str_c(input$select_year, collapse = ", ")
+    input_m <- str_c(input$select_month, collapse = ", " )
+    input_g <- str_c(input$select_genres, collapse = ", ")
+    
+    final2 <- final2 %>% filter(str_detect(input_y, year)) %>% 
+      filter(str_detect(input_m, month)) %>% 
+      filter(str_detect(input_g, genres))
+    
+    final2$month <- fct_inorder(final2$month)
+    final2$year <- factor(final2$year)
+    
+    ggplot(data = final2) +
+      geom_boxplot(aes(x = genres, y = vote_average, color = genres)) +
+      theme(axis.text.x = element_text(angle = 60, hjust = 1), legend.position = "none") +
+      labs(x = "Genres", y = "Voting Score")
   })
   
   output$plot4 <- renderPlot({
@@ -272,6 +355,175 @@ server <- function(input, output) {
       geom_bar(aes(fill = month), position = "dodge") +
       theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
       labs(x = "", y = "Number of Movies Released")
+  })
+  
+  output$plot7 <- renderPlot({
+    oscars2 <- oscars
+    oscars2$year <- as.character(oscars$year)
+    input_y <- str_c(input$oscars_select_year, collapse = ", ")
+    oscars2 <- oscars2 %>% filter(str_detect(input_y, year))
+    oscars2$year <- factor(oscars2$year)
+    
+    jitter <- ggplot(data = oscars2 %>% dplyr::select(-genres) %>% distinct(), aes(color = Year)) +
+      geom_jitter(aes(x = vote_average, y = gross, color = year), alpha = 3/5, size = 3) +
+      geom_text(aes(x = vote_average, y = gross, label = year), color = "salmon", size = 4,
+                vjust = -0.7) +
+      labs(x = "Voting Score", y = "Gross Box office") 
+    
+    if (input$line2 == TRUE) {
+      jitter + geom_smooth(aes(x = jitter(vote_average), y = jitter(gross)), color = "salmon", size = 0.5)
+    } else{
+      jitter
+    }
+    
+  })
+  
+  output$plot8 <- renderPlot({
+    oscars2 <- oscars
+    oscars2$year <- as.character(oscars$year)
+    input_y <- str_c(input$oscars_select_year, collapse = ", ")
+    oscars2 <- oscars2 %>% filter(str_detect(input_y, year))
+    oscars2$year <- factor(oscars2$year)
+    
+    ggplot(data = oscars2) +
+      geom_bar(aes(x = genres, fill = year)) +
+      labs(x = "Genres", y = "Number of Movies")
+  })
+  
+  output$plot9 <- renderPlot({
+    oscars2 <- oscars
+    oscars2$year <- as.character(oscars$year)
+    input_y <- str_c(input$oscars_select_year, collapse = ", ")
+    oscars2 <- oscars2 %>% filter(str_detect(input_y, year))
+    oscars2$year <- factor(oscars2$year)
+    
+    ggplot(data = oscars2 %>% dplyr::select(-genres) %>% distinct()) +
+      geom_bar(aes(x = month, fill = year)) + 
+      labs (x = "", y = "Number of Movies")
+  })
+  
+  output$mytable4 <- DT::renderDataTable({
+    oscars2 <- oscars
+    oscars2$year <- as.character(oscars$year)
+    input_y <- str_c(input$oscars_select_year, collapse = ", ")
+    
+    oscars2 <- oscars2 %>% filter(str_detect(input_y, year)) %>% 
+      group_by(title, imdb_id, distributor, vote_average, year, month, gross) %>%
+      summarise(genres = paste(genres, collapse = ", ")) %>%
+      ungroup()
+    
+    oscars2$year <- factor(oscars2$year)
+    
+    oscars2 <- oscars2 %>% dplyr::select(title, imdb_id, distributor, vote_average, year, month, genres, gross) %>% 
+      arrange(year, month)
+    
+    oscars2$genres <- ifelse(oscars2$genres == "NA", NA, oscars2$genres)
+    
+    DT::datatable(oscars2)
+  })
+  
+  output$plot10 <- renderPlot({
+    oscars2 <- oscars
+    oscars2$year <- as.character(oscars$year)
+    input_y <- str_c(input$oscars_select_year, collapse = ", ")
+    oscars2 <- oscars2 %>% filter(str_detect(input_y, year))
+    oscars2$year <- factor(oscars2$year)
+    
+    h1 <- h_1
+    h1$year <- as.character(h1$year)
+    h1 <- h1 %>% filter(str_detect(input_y, year)) %>% dplyr::select(-genres) %>% distinct()
+    h1$year <- factor(h1$year)
+    
+    box <- ggplot() +
+      geom_line(data = oscars2 %>% dplyr::select(-genres) %>% distinct(),
+                mapping = aes(x= year, y = gross, colour = "Oscars", group = 1), size = 1.5) +
+                theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+                labs(x = "", y = "Gross Box Office", color = 'Legend')
+    
+    if (input$yearly_box == TRUE) {
+      box1 <- box + geom_line(data = oscars %>% dplyr::select(-genres) %>% distinct(),
+                              mapping = aes(x = year, y = avg_y_gross, color = "Yearly Average", group = 2))
+      box1
+    } else {
+      box1 <- box
+      box1 }
+    
+    if (input$monthly_box == TRUE) {
+        box2 <- box1 + geom_line(data = oscars %>% dplyr::select(-genres) %>% distinct(),
+                              mapping = aes(x = year, y = avg_m_gross, color = "Monthly Average", group = 3))
+        box2
+      } else{
+        box2 <- box1
+        box2 }
+    
+    if (input$monthly_all_box == TRUE) {
+        box3 <- box2 + geom_line(data = oscars %>% dplyr::select(-genres) %>% distinct(),
+                                   mapping = aes(x = year, y = avg_alm_gross, color = "Monthly Average \nof All Years"), group = 4)
+        box3
+      } else{
+        box3 <- box2
+        box3 }
+    
+    if(input$year_high_box == TRUE) {
+      box3 +  geom_line(data = h1, mapping = aes(x = year, y = gross, color = "Yearly Highest Gross", group =5))
+    } else{
+      box3
+    }
+  })
+  
+  output$plot11 <- renderPlot({
+    oscars2 <- oscars
+    oscars2$year <- as.character(oscars$year)
+    input_y <- str_c(input$oscars_select_year, collapse = ", ")
+    oscars2 <- oscars2 %>% filter(str_detect(input_y, year))
+    oscars2$year <- factor(oscars2$year)
+    
+    h1 <- h_1
+    h1$year <- as.character(h1$year)
+    h1 <- h1 %>% filter(str_detect(input_y, year)) %>% dplyr::select(-genres) %>% distinct()
+    h1$year <- factor(h1$year)
+    
+    box <-  ggplot() +
+      geom_line(data = oscars2 %>% dplyr::select(-genres) %>% distinct(),
+                mapping = aes(x= year, y = vote_average, colour = "Oscars", group = 1)) +
+      theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+      labs(x = "", y = "Voting Score", color = 'Legend')
+    
+    if (input$yearly == TRUE) {
+      box1 <- box + geom_line(data = oscars2 %>% dplyr::select(-genres) %>% distinct(),
+                              mapping = aes(x = year, y = avg_y_rate, color = "Yearly Average", group = 2))
+      box1
+    } else {
+      box1 <- box
+      box1 }
+    
+    if (input$monthly == TRUE) {
+      box2 <- box1 + geom_line(data = oscars2 %>% dplyr::select(-genres) %>% distinct(),
+                               mapping = aes(x = year, y = avg_m_rate, color = "Monthly Average", group = 3))
+      box2
+    } else{
+      box2 <- box1
+      box2 }
+    
+    if (input$monthly_all == TRUE) {
+      box3 <- box2 + geom_line(data = oscars2 %>% dplyr::select(-genres) %>% distinct(),
+                              mapping = aes(x = year, y = avg_alm_rate, color = "Monthly Average \nof All Years",
+                                                   group = 4))
+      box3
+    } else{
+      box3 <- box2
+      box3 }
+    
+    if(input$year_high == TRUE) {
+      box4 <- box3 +  geom_line(data = h1, mapping = aes(x = year, y = vote_average, color = "Yearly Highest Gross", group = 5))
+      box4
+      } else{
+      box4 <- box3
+      box4
+    }
+    
+
+
   })
 }
 

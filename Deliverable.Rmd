@@ -1,0 +1,136 @@
+---
+title: "Deliverable"
+author: "Xiru Lyu"
+date: "5/2/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, fig.align = 'center')
+
+source("4_Analysis.R")
+library(gridExtra)
+```
+
+
+## Summary for the full dataset
+
+```{r, fig.width=12}
+plot_1
+```
+
+```{r, fig.width=12}
+plot_2
+```
+
+```{r, fig.width=12}
+plot_3
+```
+
+```{r}
+plot_4
+```
+
+```{r}
+plot_5
+```
+
+```{r}
+plot_6
+```
+
+
+## Films with the most yearly gross box office
+
+### Comparison of box office
+
+```{r fig.width=10, fig.height=7.5}
+grid.arrange(h_1_box, h_1_rate, nrow = 1, ncol = 2)
+```
+
+### By genre
+
+```{r}
+h_1_genre
+```
+
+```{r}
+h_1_box_vote
+```
+
+```{r}
+grid.arrange(h_1_box_genre, h_1_vote_genre, nrow = 1, ncol = 2)
+```
+
+## Films with Monthly Highest Gross Box Office (of all time)
+
+```{r fig.width=10, fig.height = 5}
+grid.arrange(h_2_box, h_2_rate, nrow = 1, ncol = 2)
+```
+
+```{r}
+h_2_genre
+```
+
+```{r}
+grid.arrange(h_2_box_genre, h_2_vote_genre, nrow = 1, ncol = 2)
+```
+
+```{r}
+h_2_box_vote
+```
+
+
+## Lowest Yearly Gross Box Office
+
+```{r fig.width=10, fig.height=6.5}
+grid.arrange(l_1_box, l_1_rate, nrow = 1, ncol = 2)
+```
+
+### By genre
+
+```{r}
+l_1_genre
+```
+
+```{r}
+l_1_box_vote
+```
+
+```{r}
+grid.arrange(l_1_box_genre, l_1_vote_genre, nrow = 1, ncol = 2)
+```
+
+
+## Lowest Monthly Gross Box Office (of all times)
+```{r fig.width = 10, fig.height=5}
+grid.arrange(l_2_box, l_2_rate, nrow = 1, ncol = 2)
+```
+
+```{r}
+l_2_genre
+```
+
+```{r}
+grid.arrange(l_2_box_genre, l_2_vote_genre, nrow = 1, ncol = 2)
+```
+
+```{r}
+l_2_box_vote
+```
+
+
+## Oscars
+
+```{r fig.width=10}
+grid.arrange(oscars_genre, oscars_time, nrow = 1, ncol = 2)
+```
+
+```{r fig.width=10, fig.height=5}
+grid.arrange(oscars_box, oscars_vote, nrow = 1, ncol = 2)
+```
+
+```{r}
+oscars_box_vote
+```
+
