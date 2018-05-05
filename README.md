@@ -2,26 +2,27 @@
 
 ## Summary
 
-This is the final project for MA415/615. It focuses on the "supply and demand" in the US film industry by exploring the the relationship between movies released in theaters and viewers' preferences. This study intends to help US movie makers stay competitive in the film industry, making movies that have high quality and generate profits.
+This is the final project for MA415/615. It focuses on "supply and demand" in the US film industry by exploring the relationship between movies released in theaters and viewers' preferences. This study intends to help US movie makers stay competitive in the film industry, making movies that have high quality and generate profits.
 
 ## Suggestions for Viewing Files in This Repository
 
-It's recommended to open files in the following order to produce expected results:
+It's recommended to run files in the following order to install required packages and produce expected results:
 
 1_Data_Download_Basic.R
+
 2_Data_Cleaning.R
+
 3_Tidy_Data.R
+
 4_Analysis.R
 
-Additionally, the file "movies_metadata.csv" inside folder "the-movies-dataset" contains TMDb information for movies released on or before July 2017, and it was downloaded from Kaggle. 
+Additionally, the file "movies_metadata.csv" inside folder "the-movies-dataset" contains TMDb information for movies released on or before July 2017, and it was downloaded from "The Movies Dataset" at Kaggle. 
 
-The original link for the dataset: 
-
-https://www.kaggle.com/rounakbanik/the-movies-dataset
+The original link for the dataset: https://www.kaggle.com/rounakbanik/the-movies-dataset
 
 ## Shiny App
 
-link for Shiny app: 
+Link for Shiny app: 
 https://xlyu.shinyapps.io/MA615_final_project/
 
 ### A few notes for using Shiny app:
