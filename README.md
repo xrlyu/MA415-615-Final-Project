@@ -27,7 +27,8 @@ https://xlyu.shinyapps.io/MA615_final_project/
 
 ### A few notes for using Shiny app:
 
-1. When using "Create Your Own" tab to generate box office report, please select a relatively short time range (preferably <30 days) so that the loading time is bearable. Please keep in mind that when specifying the time range, the application would be downloading real-time information from the database.
-2. Usually box office data would be released one day after at 8 pm (PT) but it might not be the case some times. In order to avoid problems in downloading data, users are expected to set the end date of the report to be two days earlier than the system date.
+1. When using "Create Your Own" tab to generate box office report, please select a relatively short time range (preferably <30 days) so that the loading time is bearable. Please keep in mind that when specifying the time range, the application will be downloading real-time information from the database.
+
+2. Usually box office data would be released at 8 pm (PT) one day after the actual show date but might not be the case some times. To avoid errors in downloading data, users are expected to set the end date of the report to be two days earlier than the system date.
 
 ## THANK YOU for reading my report and trying out the app!!!
