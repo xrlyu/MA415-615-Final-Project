@@ -485,7 +485,7 @@ server <- function(input, output) {
     
     box <-  ggplot() +
       geom_line(data = oscars2 %>% dplyr::select(-genres) %>% distinct(),
-                mapping = aes(x= year, y = vote_average, colour = "Oscars", group = 1)) +
+                mapping = aes(x= year, y = vote_average, colour = "Oscars", group = 1), size = 1.5) +
       theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
       labs(x = "", y = "Voting Score", color = 'Legend')
     
