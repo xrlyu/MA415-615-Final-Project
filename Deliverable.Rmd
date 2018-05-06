@@ -14,6 +14,8 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, fig.align 
 
 source("4_Analysis.R")
 library(gridExtra)
+library(knitr)
+library(kableExtra)
 ```
 
 
@@ -21,7 +23,7 @@ library(gridExtra)
 
 Watching movies has always been a popular way of entertainment for many Americans. According to @STATISTA, the US is the third largest film market in the world, with about 13% of Americans going to see movies about once every month, while about 7% of Americans are moviegoers who visit movie theaters several times a month. In addition, Hollywood strives to play a dominant role in the world film industry since many popular movies nowadays were produced by Hollywood. However, many recent articles address concerns over the future of domestic movie industry. As pointed out by @Verge, domestic movie attendance hit 25-year low in 2017, while domestic revenue dropped 2.7% from 2016 despite higher ticket prices. She identifies several threats that the domestic movie industry is facing right now: rising ticket prices, and increasing competition from streaming services like Netflix, Amazon and HBO GO. Even worse, @Vanity states that the traditional film industry is hurt by the popularity of stimulating original contents made by Netflix. Thus, players in the industry are facing huge challenges on how they shall adapt to these changes and get prepared for any other forthcoming shifts. 
 
-This study intends to help movie businesses to understand the US film market in the recent decade through a “supply and demand” analysis using data from 2008 to 2018 [^1], exploring the extent that movies released in theaters match audiences’ preferences and if any improvement can be made so that future movies can attract more viewers. 
+This study intends to help movie businesses to understand the US film market in the recent decade through a “supply and demand” analysis using data from 2008 to 2018 [^1], exploring the extent that movies released in theaters match audiences’ preferences and if any improvement can be made so that future movies can attract more viewers. Here, 
 
 [^1]: More specifically, data span the time frame between 2008-01-01 and 2018-04-12.
 
@@ -58,7 +60,7 @@ Since [IMDb](http://imdb.com) requires permission to use its data, [TMDb](https:
 
 ## General Overview of Movies Released Between 2008 and 2018 [^2]
 
-[^2]: Some graphs in this and following sections may be hard to read due to the amount of variables plotted. It is highly recommended to go to https://xlyu.shinyapps.io/MA615_final_project/, using more interactive graphs under the tab ["Detailed Reports"](https://xlyu.shinyapps.io/MA615_final_project/)for clearer visualizations.
+[^2]: Some graphs in this and following sections may be hard to read due to the amount of variables plotted. It is highly recommended to go to https://xlyu.shinyapps.io/MA615_final_project/, using more interactive graphs under the tab ["Detailed Reports"](https://xlyu.shinyapps.io/MA615_final_project/) for clearer visualizations.
 
 This section focuses on analyzing all movies released between 2008-01-01 and 2018-04-21. It tries to capture general trends of movies released in theaters and audiences' preferences using all available information.
 
@@ -103,7 +105,7 @@ plot_6
 
 ```{r, fig.width=12, fig.height=6, fig.cap="Figure 6: Gross Box Office vs. Voting Score"}
 plot_4
-options(digits = 0)
+options(digits = 2)
 full_corr <- cor(final$gross, final$vote_average, use = "na.or.complete")
 ```
 
@@ -112,6 +114,12 @@ Figure 6 plots each movie’s gross box office and voting score, and a fitted li
 ## Films with the most yearly gross box office
 
 ### Gross Box Office vs. Voting Score
+
+```{r}
+kable(h_1 %>% dplyr::select(-genres) %>% distinct() %>% dplyr::select(title, year), "html") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE, position = "float_right")
+```
+
 
 ```{r fig.width=10, fig.height=7.5}
 grid.arrange(h_1_box, h_1_rate, nrow = 1, ncol = 2)
@@ -132,7 +140,13 @@ h_1_genre
 grid.arrange(h_1_box_genre, h_1_vote_genre, nrow = 1, ncol = 2)
 ```
 
-## Films with Monthly Highest Gross Box Office (of all time)
+## Films with Monthly Highest Gross Box Office 
+
+```{r}
+kable(h_2 %>% dplyr::select(-genres) %>% distinct() %>% dplyr::select(title, month) %>% arrange(month), "html") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE, position = "float_right")
+```
+
 
 ```{r fig.width=10, fig.height = 5}
 grid.arrange(h_2_box, h_2_rate, nrow = 1, ncol = 2)
@@ -153,6 +167,12 @@ h_2_box_vote
 
 ## Lowest Yearly Gross Box Office
 
+```{r}
+kable(l_1 %>% dplyr::select(-genres) %>% distinct() %>% dplyr::select(title, year), "html") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE, position = "float_right")
+```
+
+
 ```{r fig.width=10, fig.height=6.5}
 grid.arrange(l_1_box, l_1_rate, nrow = 1, ncol = 2)
 ```
@@ -172,7 +192,13 @@ grid.arrange(l_1_box_genre, l_1_vote_genre, nrow = 1, ncol = 2)
 ```
 
 
-## Lowest Monthly Gross Box Office (of all times)
+## Lowest Monthly Gross Box Office 
+
+```{r}
+kable(l_2 %>% dplyr::select(-genres) %>% distinct() %>% dplyr::select(title, month) %>% arrange(month), "html") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE, position = "float_right")
+```
+
 ```{r fig.width = 10, fig.height=5}
 grid.arrange(l_2_box, l_2_rate, nrow = 1, ncol = 2)
 ```
@@ -191,6 +217,12 @@ l_2_box_vote
 
 
 ## Oscars
+
+```{r}
+kable(oscars %>% dplyr::select(-genres) %>% distinct() %>% dplyr::select(title, year), "html") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE, position = "float_right")
+```
+
 
 ```{r fig.width=10}
 grid.arrange(oscars_genre, oscars_time, nrow = 1, ncol = 2)

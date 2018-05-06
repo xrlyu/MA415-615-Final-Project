@@ -8,7 +8,9 @@ data <- readRDS("./Data/tidy.rds") # load tidy data
 
 data$gross <- as.numeric(data$gross)
 
-data2 <- data %>% dplyr::select(-genres) %>% distinct() %>% 
+data <- data %>% dplyr::select(-distributor) %>% distinct()
+
+data2 <- data %>% dplyr::select(-c(genres)) %>% distinct() %>% 
   dplyr::group_by(year) %>% 
   mutate(avg_y_gross = mean(gross)) %>%  # yearly average box office
   mutate(avg_y_rate = mean(vote_average, na.rm = TRUE)) %>%  # yearly voting average
@@ -65,22 +67,19 @@ final$month <- fct_inorder(factor(final$month))
 
 plot_1 <- ggplot(data = final %>% dplyr::select(-genres) %>% distinct(), aes(x = year)) +
   geom_bar(aes(fill = month), position = "dodge") +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
   labs(x = "", y = "Number of Movies Released")
 
 plot_2 <- ggplot(data = final, aes(x = fct_infreq(final$genres))) +
   geom_bar(aes(fill = year)) +
   geom_text(stat='count', aes(label=..count..), size = 3, hjust = -0.2) +
   coord_flip() +
-  labs(x = "Genres", y ="Number of Movies", title = "Number of Movies Released by Genre",
-       subtitle= "Yearly Data")
+  labs(x = "Genres", y ="Number of Movies")
 
 plot_3 <- ggplot(data = final, aes(x = fct_infreq(final$genres))) +
   geom_bar(aes(fill = month)) +
   geom_text(stat = 'count', aes(label = ..count..), size = 3, hjust= -0.2) +
   coord_flip() +
-  labs(x= "Genres", y = "Number of Movies", title = "Number of Movies Released by Genre",
-       subtitle = "Monthly Data")
+  labs(x= "Genres", y = "Number of Movies")
   
 plot_4 <- ggplot(data = final %>% dplyr::select(-genres) %>% distinct(), aes(color = Year)) +
   geom_jitter(aes(x = vote_average, y = gross, color = year), alpha = 2/5, size = 3) +
@@ -101,13 +100,13 @@ cor(final$vote_average, final$gross, use = "complete")
 
 ### Movies of the highest gross box office every year
 
-h_1 <- final %>% group_by(year) %>% filter(gross == max(gross)) 
+h_1 <- final %>% group_by(year) %>% filter(gross == max(gross)) %>% ungroup()
 
 h_1$genres <- fct_infreq(h_1$genres)
 
 h_1_genre <- ggplot(data = h_1, aes(x = genres)) +
-  geom_bar() +
-  labs(x = "Genres", y ="Number of Movies") +
+  geom_bar(aes(fill = year)) +
+  labs(x = "Genres", y ="Number of Movies", legend = "Movie Titles") +
   theme(axis.text.x = element_text(angle = 60, hjust = 1))
 
 h_1_box_genre <- ggplot(data = h_1, aes(x = genres)) +
@@ -128,7 +127,7 @@ h_1_box_vote <- ggplot(data = h_1 %>% dplyr::select(-genres) %>% distinct()) +
   geom_smooth(aes(x = vote_average, y = gross), method = "lm", color = 'steelblue1', group = 1) +
   labs(x = "Voting Score", y = "Gross Box Office")
   
-h_1_rate <- ggplot(data = h_1 %>% dplyr::select(-genres) %>% distinct()) +
+h_1_rate <- ggplot(data = h_1 %>% dplyr::select(-genres) %>% distinct() %>% arrange(year)) +
   geom_line(mapping = aes(x= title, y = vote_average, colour = "Actual", group = 1), size = 1.5) +
   geom_line(mapping = aes(x = title, y = avg_y_rate, color = "Yearly Average", group = 2)) +
   geom_line(mapping = aes(x = title, y = avg_m_rate, color = "Monthly Average", group = 3)) +
@@ -136,7 +135,7 @@ h_1_rate <- ggplot(data = h_1 %>% dplyr::select(-genres) %>% distinct()) +
   annotate("text", x = 1:11, y = 8.25, label = unique(sort(h_1$year, decreasing = TRUE)), size = 3, color = "grey74", angle = 90) +
   theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
   geom_smooth(mapping = aes(x= title, y = vote_average, group = 6), method = "lm") +
-  labs(x = "", y = "Voting Score", title = "Each Year's Movie with Highest Gross Box Office",
+  labs(x = "", y = "Voting Score", title = "Each Year's Movie with the Highest Box Office",
        subtitle = "A Comparison of Voting Score", color = "Legend") # comparison of voting score
 
 h_1_box <- ggplot(data = h_1 %>% dplyr::select(-genres) %>% distinct()) +
@@ -147,18 +146,18 @@ h_1_box <- ggplot(data = h_1 %>% dplyr::select(-genres) %>% distinct()) +
   annotate("text", x = 1:11, y = 1*10^9, label = unique(sort(h_1$year, decreasing = TRUE)), size = 3, color = "grey74", angle = 90) +
   theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
   geom_smooth(mapping = aes(x= title, y = gross, group = 6), method = "lm") +
-  labs(x = "", y = "Box Office", title = "Each Year's Movie with Highest Gross Box Office",
+  labs(x = "", y = "Box Office", title = "Each Year's Movie with the Highest Box Office",
        subtitle = "A Comparison of Box Office Numbers", color = 'Legend') # comparison of box office
 
 
 ### Movies of the highest gross box office every month (of all years)
 
-h_2 <- final %>% group_by(month) %>% filter(gross == max(gross))
+h_2 <- final %>% group_by(month) %>% filter(gross == max(gross)) %>% ungroup()
 
 h_2$genres <- fct_infreq(h_2$genres)
 
 h_2_rate <- ggplot(data = h_2 %>% dplyr::select(-c(genres, year)) %>% distinct()) +
-  geom_line(mapping = aes(x= month, y = vote_average, color = "Actual", group = 1), size = 1.5) +
+  geom_line(mapping = aes(x = month, y = vote_average, color = "Actual", group = 1), size = 1.5) +
   geom_line(mapping = aes(x = month, y = avg_y_rate, color = "Yearly Average", group = 2)) +
   geom_line(mapping = aes(x = month, y = avg_m_rate, color = "Mothly Average", group = 3)) +
   geom_line(mapping = aes(x = month, y = avg_alm_rate, color = "Monthly Average \nof All Years", group = 4)) +
@@ -166,7 +165,7 @@ h_2_rate <- ggplot(data = h_2 %>% dplyr::select(-c(genres, year)) %>% distinct()
   theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
   labs(x = "", y = "Voting Score", color = "Legend")
 
-h_2_box <- ggplot(data = h_2 %>% dplyr::select(-genres) %>% distinct() %>% arrange(year)) +
+h_2_box <- ggplot(data = h_2 %>% dplyr::select(-genres) %>% distinct()) +
   geom_line(mapping = aes(x= month, y = gross, color = "Actual", group = 1), size = 1.5) +
   geom_line(mapping = aes(x = month, y = avg_y_gross, color = "Yearly Average", group = 2)) +
   geom_line(mapping = aes(x = month, y = avg_m_gross, color = "Mothly Average", group = 3)) +
@@ -176,7 +175,7 @@ h_2_box <- ggplot(data = h_2 %>% dplyr::select(-genres) %>% distinct() %>% arran
   labs(x = "", y = "Gross Box Office", color = "Legend")
 
 h_2_genre <- ggplot(data = h_2, aes(x = genres)) +
-  geom_bar() +
+  geom_bar(aes(fill = month)) +
   theme(axis.text.x = element_text(angle = 60, hjust = 1))
   labs(x = "Genres", y ="Number of Movies")
 
@@ -200,12 +199,12 @@ h_2_box_vote <- ggplot(data = h_2 %>% dplyr::select(-genres) %>% distinct()) +
 
 ### Movies of the lowest gross box office every year
 
-l_1 <- final %>% group_by(year) %>% filter(gross == min(gross))
+l_1 <- final %>% group_by(year) %>% filter(gross == min(gross)) %>% ungroup()
 
 l_1$genres <- fct_infreq(l_1$genres)
 
 l_1_genre <- ggplot(data = l_1, aes(x = genres)) +
-  geom_bar() +
+  geom_bar(aes(fill = year)) +
   labs(x = "Genres", y ="Number of Movies")
 
 l_1_box_genre <- ggplot(data = l_1, aes(x = genres)) +
@@ -251,13 +250,13 @@ l_1_box <- ggplot(data = l_1 %>% dplyr::select(-genres) %>% distinct()) +
 
 ### Movies of the lowest gross box office every month (of all years)
 
-l_2 <- final %>% group_by(month) %>% filter(gross == min(gross))
+l_2 <- final %>% group_by(month) %>% filter(gross == min(gross)) %>% ungroup()
 
 l_2$genres <- fct_infreq(l_2$genres)
 
 l_2_rate <- ggplot(data = l_2 %>% dplyr::select(-c(genres, year)) %>% distinct()) +
   geom_line(mapping = aes(x = month, y = vote_average, group = 6, color = "Actual")) +
-  geom_smooth(mapping = aes(x= month, y = vote_average, group = 1), method = "lm") +
+  geom_smooth(mapping = aes(x = month, y = vote_average, group = 1), method = "lm") +
   geom_line(mapping = aes(x = month, y = avg_y_rate, color = "Yearly Average", group = 2)) +
   geom_line(mapping = aes(x = month, y = avg_m_rate, color = "Mothly Average", group = 3)) +
   geom_line(mapping = aes(x = month, y = avg_alm_rate, color = "Monthly Average \nof All Years", group = 4)) +
@@ -265,7 +264,7 @@ l_2_rate <- ggplot(data = l_2 %>% dplyr::select(-c(genres, year)) %>% distinct()
   geom_smooth(mapping = aes(x= month, y = vote_average, group = 6), method = "lm") +
   labs(x = "", y = "Voting Score", color = "Legend")
 
-l_2_box <- ggplot(data = l_2 %>% dplyr::select(-genres) %>% distinct() %>% arrange(year)) +
+l_2_box <- ggplot(data = l_2 %>% dplyr::select(-genres) %>% distinct()) +
   geom_line(mapping = aes(x= month, y = gross, color = "Actual", group = 1), size = 1.5) +
   geom_line(mapping = aes(x = month, y = avg_y_gross, color = "Yearly Average", group = 2)) +
   geom_line(mapping = aes(x = month, y = avg_m_gross, color = "Mothly Average", group = 3)) +
@@ -275,7 +274,7 @@ l_2_box <- ggplot(data = l_2 %>% dplyr::select(-genres) %>% distinct() %>% arran
   labs(x = "", y = "Gross Box Office", color = "Legend")
 
 l_2_genre <- ggplot(data = l_2, aes(x = genres)) +
-  geom_bar() +
+  geom_bar(aes(fill = month)) +
   labs(x = "Genres", y ="Number of Movies") +
   theme(axis.text.x = element_text(angle = 60, hjust = 1))
 

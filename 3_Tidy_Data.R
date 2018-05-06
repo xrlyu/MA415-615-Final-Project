@@ -44,8 +44,6 @@ inflation$inflation <- inflation$inflation/ 100
 full <- left_join(full, inflation, by = "year") %>% 
   replace_na(list(inflation = 1.182197))
 
-options(scipen = 999)
-
 full$gross <- format(round(full$total_gross * full$inflation))
 
 full <- full %>% 
