@@ -352,6 +352,8 @@ cor(oscars$vote_average,oscars$gross)
 
 ###### Movies released in April
 
+most_recent <- arrange(most_recent, title)
+
 recent_time <- ggplot(data = most_recent %>% dplyr::select(-genres) %>% distinct()) +
   geom_bar(aes(x = month, fill = title)) +
   theme(axis.text.x = element_text(angle = 60, hjust = 1),
