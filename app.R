@@ -7,13 +7,14 @@ source("0_Reference.R")
 source("4_Analysis.R")
 
 ui <- dashboardPage(
-  dashboardHeader(title = "Movie Data"),
+  dashboardHeader(title = "Supply and Demand in Domestic Film Industry", titleWidth = 450),
   dashboardSidebar(
     sidebarMenu(
       menuItem("Real-time Box Office", tabName = "boxoffice", icon = icon("film", lib = "glyphicon")),
       menuItem("Detailed Reports", icon = icon("pencil", lib = "glyphicon"),
                menuSubItem("General Analysis", tabName = "general_view", icon = icon("table")),
-               menuSubItem("Oscars Best Picture", tabName = "oscars", icon = icon('table')))
+               menuSubItem("Oscars Best Picture", tabName = "oscars", icon = icon('camera-retro')),
+               menuSubItem("Oscars Best Picture Prediction", tabName = "prediction", icon = icon('graduation-cap')))
     )
   ),
   dashboardBody(
@@ -25,7 +26,7 @@ ui <- dashboardPage(
                 sidebarPanel(
                   conditionalPanel('input.dataset == "Create Your Own"',
                                    dateRangeInput('daterange', label = 'Select Date', start = Sys.Date()-4, end = Sys.Date()-2),
-                                   helpText("Box office data are only available until two days prior to today."),
+                                   helpText("Box office data are only available until two days before today."),
                                    helpText("Please select a reasonable time range for short loading time."),
                                    checkboxGroupInput("show_vars_h", "Select Variables to Display",
                                                       choiceNames = c("distributor", "daily gross box office", "weekly gross box office", "total gross box office since first on view", "total number of days in theaters"),
@@ -69,7 +70,7 @@ ui <- dashboardPage(
                 
                 box(title = "Box Office vs. Voting Score", status = "primary", solidHeader = TRUE,
                     withLoader(plotOutput("plot4"), type = "html", loader = "loader7"),
-                    checkboxInput("line", label = "Add a smoonth line", value = FALSE)),
+                    checkboxInput("line", label = "Add a fitted line", value = FALSE)),
                 
                 tabBox(title = "Continuous Variables Analysis Based On Genre", width = 12,
                        tabPanel("Box Office", withLoader(plotOutput("plot12"), type = "html", loader = "loader7")),
@@ -91,10 +92,10 @@ ui <- dashboardPage(
               ),
       # third tab item
       tabItem(tabName = "oscars", 
-              fluidRow(titlePanel("Movies Awarded Oscars Best Picture"),
+              fluidPage(titlePanel("Movies Awarded Oscars Best Picture"),
                         box(title = "Box Office vs. Voting Score", status = "primary", solidHeader = TRUE,
                              withLoader(plotOutput("plot7"), type = "html", loader = "loader6"),
-                             checkboxInput("line2", label = "Add a smooth line", value = FALSE)),
+                             checkboxInput("line2", label = "Add a fitted line", value = FALSE)),
                        
                        box(title = "Inputs", status = "warning", solidHeader = TRUE,
                            checkboxGroupInput("oscars_select_year", label = "Select Year(s)",
@@ -119,7 +120,25 @@ ui <- dashboardPage(
                        
                        mainPanel(h2("Detatiled Information"),
                                  withLoader(DT::dataTableOutput("mytable4"), type = "html", loader = "pacman"))
-              ))
+              )),
+        # last tab item
+        tabItem(tabName = "prediction", 
+                fluidPage(
+                  titlePanel("Can any of these movies can win Oscars Best Picture?"),
+                  box(title = "Select Movie(s)", status = "warning", solidHeader = TRUE,
+                      checkboxGroupInput("movie", label = "", 
+                                         choices = unique(most_recent$title),
+                                         selected = "Acrimony", inline = TRUE)),
+                  tabBox(title = "Detailed Analysis", width = 12, 
+                         tabPanel("Release Month", withLoader(plotOutput("plot14"), type = "html", loader = "loader3")),
+                         tabPanel("Movie Genre", withLoader(plotOutput("plot15"), type = "html", loader = "loader3")),
+                         tabPanel("Box Office vs. Voting Score", withLoader(plotOutput("plot16"), type = "html", loader = 'loader3'))),
+                  
+                  mainPanel(h2("Detatiled Information"),
+                            withLoader(DT::dataTableOutput("mytable5"), type = "html", loader = "pacman"))
+                  
+                ))
+
 )
     )
   )
@@ -127,6 +146,8 @@ ui <- dashboardPage(
 
 server <- function(input, output) {
   output$mytable1 <- DT::renderDataTable({
+    
+    # find the system date and use it to find box office data
     realtime <- get_box(seq(Sys.Date()-8, Sys.Date()-2, by = 1))
     movie <- realtime$movie
     DT::datatable(cbind(movie, realtime[, input$show_vars]))
@@ -139,6 +160,7 @@ server <- function(input, output) {
   })
   
   output$mytable3 <- DT::renderDataTable({
+    # create a new tibble that is responsive to user inputs
     final2 <- final
     final2$year <- as.character(final$year)
     final2$month <- as.character(final$month)
@@ -151,13 +173,13 @@ server <- function(input, output) {
     final2 <- final2 %>% filter(str_detect(input_y, year)) %>% 
       filter(str_detect(input_m, month)) %>% 
       filter(str_detect(input_g, genres)) %>% 
-      group_by(title, imdb_id, distributor, vote_average, year, month, gross) %>%
+      group_by(title, imdb_id, vote_average, year, month, gross) %>%
       summarise(genres = paste(genres, collapse = ", ")) %>%
       ungroup()
     
     final2$month <- fct_inorder(factor(final2$month))
       
-    final2 <- final2 %>% dplyr::select(title, imdb_id, distributor, vote_average, year, month, genres, gross) %>% 
+    final2 <- final2 %>% dplyr::select(title, imdb_id, vote_average, year, month, genres, gross) %>% 
       arrange(year, month)
   
     final2$genres <- ifelse(final2$genres == "NA", NA, final2$genres)
@@ -256,7 +278,7 @@ server <- function(input, output) {
     ggplot(data = final2) +
       geom_boxplot(aes(x = genres, y = gross, color = genres)) +
       theme(axis.text.x = element_text(angle = 60, hjust = 1), legend.position = "none") +
-      labs(x = "Genres", y = "Gross Box Office")
+      labs(x = "Genres", y = "Gross Box Office (in Dollar)")
   })
   
   output$plot13 <- renderPlot({
@@ -301,10 +323,12 @@ server <- function(input, output) {
     
     jitter <- ggplot(data = final2 %>% dplyr::select(-genres) %>% distinct(), aes(color = Year)) +
       geom_jitter(aes(x = vote_average, y = gross, color = year), alpha = 2/5, size = 3) +
-      labs(x = "Voting Score", y = "Gross Box office") 
+      labs(x = "Voting Score", y = "Gross Box office (in Dollar)") 
+    
+    # use if else statement to react if users choose fitted line
     
     if (input$line == TRUE) {
-      jitter + geom_smooth(aes(x = jitter(vote_average), y = jitter(gross)), color = "salmon", size = 0.5)
+      jitter + geom_smooth(aes(x = vote_average, y = gross), method = "lm", color = "salmon", size = 0.5)
     } else{
       jitter
     }
@@ -368,10 +392,10 @@ server <- function(input, output) {
       geom_jitter(aes(x = vote_average, y = gross, color = year), alpha = 3/5, size = 3) +
       geom_text(aes(x = vote_average, y = gross, label = year), color = "salmon", size = 4,
                 vjust = -0.7) +
-      labs(x = "Voting Score", y = "Gross Box office") 
+      labs(x = "Voting Score", y = "Gross Box office (in Dollar)") 
     
     if (input$line2 == TRUE) {
-      jitter + geom_smooth(aes(x = jitter(vote_average), y = jitter(gross)), color = "salmon", size = 0.5)
+      jitter + geom_smooth(aes(x = vote_average, y = gross), method = "lm", color = "salmon", size = 0.5)
     } else{
       jitter
     }
@@ -408,13 +432,13 @@ server <- function(input, output) {
     input_y <- str_c(input$oscars_select_year, collapse = ", ")
     
     oscars2 <- oscars2 %>% filter(str_detect(input_y, year)) %>% 
-      group_by(title, imdb_id, distributor, vote_average, year, month, gross) %>%
+      group_by(title, imdb_id, vote_average, year, month, gross) %>%
       summarise(genres = paste(genres, collapse = ", ")) %>%
       ungroup()
     
     oscars2$year <- factor(oscars2$year)
     
-    oscars2 <- oscars2 %>% dplyr::select(title, imdb_id, distributor, vote_average, year, month, genres, gross) %>% 
+    oscars2 <- oscars2 %>% dplyr::select(title, imdb_id,vote_average, year, month, genres, gross) %>% 
       arrange(year, month)
     
     oscars2$genres <- ifelse(oscars2$genres == "NA", NA, oscars2$genres)
@@ -438,7 +462,7 @@ server <- function(input, output) {
       geom_line(data = oscars2 %>% dplyr::select(-genres) %>% distinct(),
                 mapping = aes(x= year, y = gross, colour = "Oscars", group = 1), size = 1.5) +
                 theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
-                labs(x = "", y = "Gross Box Office", color = 'Legend')
+                labs(x = "", y = "Gross Box Office (in Dollar)", color = 'Legend')
     
     if (input$yearly_box == TRUE) {
       box1 <- box + geom_line(data = oscars %>% dplyr::select(-genres) %>% distinct(),
@@ -521,9 +545,73 @@ server <- function(input, output) {
       box4 <- box3
       box4
     }
+
+  })
+  
+  output$plot14 <- renderPlot({
     
+    most_recent2 <- most_recent
+    most_recent2$title <- as.character(most_recent2$title)
+    input_m <- str_c(input$movie, collapse = ", ")
+    most_recent2 <- most_recent2 %>% filter(str_detect(input_m, title))
+    
+    ggplot(data = most_recent2 %>% dplyr::select(-genres) %>% distinct()) +
+      geom_bar(aes(x = month, fill = title)) +
+      theme(axis.text.x = element_text(angle = 60, hjust = 1),
+            legend.position = "bottom", legend.text = element_text(size = 7)) +
+      labs (x = "", y = "Number of Movies", fill = "Movie Titles")
+  })
+  
+  output$plot15 <- renderPlot({
+    
+    most_recent2 <- most_recent
+    most_recent2$title <- as.character(most_recent2$title)
+    input_m <- str_c(input$movie, collapse = ", ")
+    most_recent2 <- most_recent2 %>% filter(str_detect(input_m, title))
 
+    ggplot(most_recent2) +
+      geom_bar(aes(x = genres, fill = title)) +
+      theme(axis.text.x = element_text(angle = 60, hjust = 1),
+            legend.position = "bottom", legend.text = element_text(size = 7)) +
+      labs(x = "Genres", y = "Number of Movies", fill = "Movie Titles")
+  })
 
+  output$plot16 <- renderPlot({
+    
+    most_recent2 <- most_recent
+    most_recent2$title <- as.character(most_recent2$title)
+    input_m <- str_c(input$movie, collapse = ", ")
+    most_recent2 <- most_recent2 %>% filter(str_detect(input_m, title))
+    
+    oscars2 <- oscars
+    oscars2$title <- as.character(oscars2$title)
+    oscars2 <- oscars2 %>% filter(str_detect(input_m, title)) %>% dplyr::select(-genres) %>% distinct()
+
+    ggplot() +
+      labs(x = "Voting Score", y = "Gross Box Office (in Dollar)") +
+      geom_label_repel(data = most_recent2 %>% dplyr::select(-genres) %>% distinct,
+                       aes(x = vote_average, y = gross, label = title), size = 3) +
+      geom_smooth(data = oscars %>% dplyr::select(-genres) %>% distinct,
+                  aes(x = vote_average, y = gross), method = "lm", color = 'steelblue1', fullrange = TRUE)
+  })
+  
+  output$mytable5 <- DT::renderDataTable({
+    
+    most_recent2 <- most_recent
+    most_recent2$title <- as.character(most_recent2$title)
+    input_m <- str_c(input$movie, collapse = ", ")
+    most_recent2 <- most_recent2 %>% filter(str_detect(input_m, title)) %>% 
+      group_by(title, imdb_id, vote_average, year, month, gross) %>%
+      summarise(genres = paste(genres, collapse = ", ")) %>%
+      ungroup()
+    
+    
+    most_recent2 <- most_recent2 %>% dplyr::select(title, imdb_id,vote_average, year, month, genres, gross) %>% 
+      arrange(year, month)
+    
+    most_recent2$genres <- ifelse(most_recent2$genres == "NA", NA, most_recent2$genres)
+    
+    DT::datatable(most_recent2)
   })
 }
 
