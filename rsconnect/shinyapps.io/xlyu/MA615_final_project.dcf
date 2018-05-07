@@ -1,0 +1,12 @@
+name: MA615_final_project
+title: MA615_final_project
+username:
+account: xlyu
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 336985
+bundleId: 1360505
+url: https://xlyu.shinyapps.io/MA615_final_project/
+when: 1525713508.08741
+asMultiple: FALSE
+asStatic: FALSE
