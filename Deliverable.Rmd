@@ -1,11 +1,13 @@
 ---
-title: "Can We Save the Declining Domestic Film Industry?"
+title: "Analysis of Supply and Demand in Domestic Film Industry"
 author: "Xiru Lyu"
-date: "5/6/2018"
+date: "5/7/2018"
 output: 
   html_document:
+    theme: yeti
     toc: true
     toc_float: true
+    fig_caption: true
 bibliography: paper.bib
 ---
 
@@ -15,31 +17,30 @@ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, fig.align 
 source("4_Analysis.R")
 library(gridExtra)
 library(knitr)
+# install.packages("kableExtra")
 library(kableExtra)
 ```
 
 
 ## Background
 
-Watching movies has always been a popular way of entertainment for many Americans. According to @STATISTA, the US is the third largest film market in the world, with about 13% of Americans going to see movies about once every month, while about 7% of Americans are moviegoers who visit movie theaters several times a month. In addition, Hollywood strives to play a dominant role in the world film industry since many popular movies nowadays were produced by Hollywood. However, many recent articles address concerns over the future of domestic movie industry. As pointed out by @Verge, domestic movie attendance hit 25-year low in 2017, while domestic revenue dropped 2.7% from 2016 despite higher ticket prices. She identifies several threats that the domestic movie industry is facing right now: rising ticket prices, and increasing competition from streaming services like Netflix, Amazon and HBO GO. Even worse, @Vanity states that the traditional film industry is hurt by the popularity of stimulating original contents made by Netflix. Thus, players in the industry are facing huge challenges on how they shall adapt to these changes and get prepared for any other forthcoming shifts. 
+Watching movies has always been a popular way of entertainment for many Americans. According to @STATISTA, the US is the third largest film market in the world, with about 13% of Americans going to see movies about once every month, while about 7% of Americans are moviegoers who visit movie theaters several times a month. In addition, Hollywood strives to play a dominant role in the world film industry since many popular movies nowadays were produced by Hollywood. However, many recent articles address concerns over the future of domestic movie industry. As pointed out by @Verge, domestic movie attendance hit 25-year low in 2017, while domestic revenue dropped 2.7% from 2016 despite higher ticket prices. She identifies several threats that the domestic movie industry is facing right now: rising ticket prices and increasing competition from streaming services like Netflix, Amazon and HBO GO. Even worse, @Vanity states that the traditional film industry is hurt by the stimulating original contents made by Netflix. Thus, players in the industry are facing huge challenges on how they shall adapt to these changes and get prepared for any other forthcoming shifts. 
 
-This study intends to help movie businesses to understand the US film market in the recent decade through a “supply and demand” analysis using data from 2008 to 2018 [^1], exploring the extent that movies released in theaters match audiences’ preferences and if any improvement can be made so that future movies can attract more viewers. Here, 
+This study intends to help movie businesses understand the US film market in the recent decade through a “supply and demand” analysis using data from 2008 to 2018 [^1], exploring the extent that movies released in theaters match audiences’ preferences and if any improvement can be made so that future movies can attract more viewers. Here, movie supply is measured through number of movies released in theaters, while consumers' preferences, or movie demand, are evaluated by box office and voting scores.
 
-[^1]: More specifically, data span the time frame between 2008-01-01 and 2018-04-12.
+[^1]: More specifically, data span the time frame between 2008-01-01 and 2018-04-12. 
 
-The report is divided into six main sections to discuss characteristics of movies supplied by producers and consumer preferences: 
+The report is divided into following four main sections to discuss characteristics of movies supplied and demanded in the market, and explore the possibility of making movies that are both profitable and of high quality: 
 
 1. Overview of all movies released between 2008 and 2018
 
 2. Analysis of movies with the highest yearly box office
 
-3. Analysis of movies with the highest monthly box office
+3. Analysis of movies with the "highest monthly box office" [^2]
 
-4. Analysis of movies with the lowest yearly box office
+[^2]: Definition for the term will be specified in the section.
 
-5. Analysis of movies with the lowest monthly box office
-
-6. Analysis of movies winning Oscars Best Picture from 2008 to 2017
+4. Analysis of movies awarded Oscars Best Picture from 2008 to 2017
 
 Information on data description as well as detailed analysis are presented in subsequent sections.
 
@@ -51,18 +52,18 @@ found_num <- final %>% dplyr::select(-genres) %>% filter(is.na(id) == FALSE) %>%
 NA_num <- final %>% dplyr::select(-genres) %>% filter(is.na(id) == TRUE) %>% n_distinct()
 ```
 
-The study analyzes gross box office, genres, voting score and release date on films released from 2008-01-01 to 2018-04-12. A ten-year span was chosen in order to reflect changes of audiences’ preferences and types of movies produced. US domestic box office data were downloaded from [The Numbers]( http://www.the-numbers.com), which is an open platform tracking information on movie businesses, with the help of R package [“boxoffice”](https://CRAN.R-project.org/package=boxoffice). The raw dataset includes each movie’s title, total gross box office, date the information was collected, total number of days in theaters. Detailed information on movies, such as TMDb ID, IMDb ID, genres, and voting score was collected in two ways. Information on movies released on or before July 2017 were found in [“The Movies Dataset”]( https://www.kaggle.com/rounakbanik/the-movies-dataset) from [Kaggle]( https://www.kaggle.com), while movies released after July 2017 had information downloaded using public API from [TMDb (The Movie Database)](https://www.themoviedb.org), which is a community built movie and TV database very similar to [IMDb (Internet Movie Database)](http://imdb.com). Two datasets were then joined together primarily by matching movie titles, and a lot of data cleaning work was required to ensure a successful merge. In the end, the complete dataset contains title, TMDb ID, IMDb ID, genres, release year, release month, voting score on TMDb, gross box office for every movie released between 2008-01-01 and 2018-04-12. A total of `r total_num` films were used for analysis, with `r found_num` films having complete information and `r NA_num` films only having box office data but missing detailed information. 
+The study analyzes gross box office, genres, voting score and release date on films released from 2008-01-01 to 2018-04-12. A ten-year span was chosen in order to reflect changes of audiences’ preferences and types of movies produced. US domestic box office data were downloaded from [The Numbers]( http://www.the-numbers.com), which is an open platform tracking information on movie businesses, with the help of R package [“boxoffice”](https://CRAN.R-project.org/package=boxoffice). The raw dataset includes each movie’s title, total gross box office, date the information was collected, total number of days in theaters. Detailed information on movies, such as TMDb ID, IMDb ID, genres, and voting score, was collected in two ways. Information on movies released on or before July 2017 were found in [“The Movies Dataset”]( https://www.kaggle.com/rounakbanik/the-movies-dataset) from [Kaggle]( https://www.kaggle.com), which is a cleaned dataset with movie information from [TMDb (The Movie Database)](https://www.themoviedb.org), while movies released after July 2017 had information downloaded using public API from [TMDb (The Movie Database)](https://www.themoviedb.org), which is a community built movie and TV database very similar to [IMDb (Internet Movie Database)](http://imdb.com). Two datasets were then joined together primarily by matching movie titles, and a lot of data cleaning work was required to ensure a successful merge. In the end, the complete dataset contains title, TMDb ID, IMDb ID, genres, release year, release month, voting score on TMDb, gross box office for every movie released between 2008-01-01 and 2018-04-12. A total of `r total_num` films were used for analysis, with `r found_num` films having complete information and `r NA_num` films only having box office data but missing detailed information. 
 
 It is worth noting that release dates used in this study weren’t taken directly from [TMDb](https://www.themoviedb.org) but were calculated by subtracting the *number of days* the movie has been in theaters from the *date of its last day on view*, both are available in the dataset downloaded from [The Numbers](http://www.the-numbers.com). Thus, release dates may be a bit different from those listed on [TMDb](https://www.themoviedb.org). 
 
-Since [IMDb](http://imdb.com) requires permission to use its data, [TMDb](https://www.themoviedb.org) becomes the best substitute for collecting move information. However, there are several issues associated with the site, potentially affecting data accuracy. [TMDb](https://www.themoviedb.org), as mentioned before, is a community built database, meaning that essentially everyone can contribute to any entry. As a result, movie genres and IMDb IDs listed may not be 100% correct, and voting scores can only reflect preferences of those who actually voted on the site. Moreover, there are several cases that multiple pages were created for the same movie, and during the data cleaning process, only one page with the most complete information was selected for movies having this situation.
+Since [IMDb](http://imdb.com) requires permission to use its data, [TMDb](https://www.themoviedb.org) becomes the best substitute for collecting move information. However, there are several issues associated with the site, potentially affecting data accuracy. [TMDb](https://www.themoviedb.org), as mentioned before, is a community built database, meaning that essentially everyone can contribute to any entry. As a result, movie genres and IMDb IDs listed may not be 100% correct, and voting scores can only reflect preferences of those who actually voted on the site. Moreover, there are several cases that multiple pages were created for the same movie, and during the data cleaning process, only one page with the most complete information was selected for movies of this situation.
 
 
-## General Overview of Movies Released Between 2008 and 2018 [^2]
+## General Overview of Movies Released Between 2008 and 2018 [^3]
 
-[^2]: Some graphs in this and following sections may be hard to read due to the amount of variables plotted. It is highly recommended to go to https://xlyu.shinyapps.io/MA615_final_project/, using more interactive graphs under the tab ["Detailed Reports"](https://xlyu.shinyapps.io/MA615_final_project/) for clearer visualizations.
+[^3]: Some graphs in this and following sections may be hard to read due to the amount of variables plotted. It is highly recommended to go to https://xlyu.shinyapps.io/MA615_final_project/, using more interactive graphs under the tab ["Detailed Reports"](https://xlyu.shinyapps.io/MA615_final_project/) for clearer visualizations.
 
-This section focuses on analyzing all movies released between 2008-01-01 and 2018-04-21. It tries to capture general trends of movies released in theaters and audiences' preferences using all available information.
+This section focuses on analyzing all movies released between 2008-01-01 and 2018-04-12. It tries to capture general trends of movies released in theaters and audiences' preferences using all available information.
 
 ### Number of Movies Released by Year and by Month
 
@@ -70,9 +71,9 @@ This section focuses on analyzing all movies released between 2008-01-01 and 201
 plot_1
 ```
 
-Figure 1 above shows number of movies released every year while each colored bar represents number of movies released every month. It can be inferred that 2011 is the year with the most number of movies released but the market then experienced severe contraction, as 2012 being the year with the lease number of movies released. Generally, more movies are released in May, August, September and December. Many documentary movies were released every year before 2012 but is no longer the case after that. In addition, starting from 2013, many more movies are released in October.
+Figure 1 above shows number of movies released every year while each colored bar represents number of movies released every month. It can be inferred that 2011 is the year with the most number of movies released but the market then experienced severe contraction, as 2012 being the year with the lease number of movies released. Generally, more movies are released in May, August, September and December. In addition, starting from 2013, many more movies are released in October.
 
-### Number of Movies Released Based On Genres
+### Number of Movies Released Based On Genre
 
 Two figures below help us to see how number of movies released for each genre vary by year and by month. Note that each movie can have one or more genres. 
 
@@ -80,7 +81,7 @@ Two figures below help us to see how number of movies released for each genre va
 plot_2
 ```
 
-Most released movies have genres such as romance, thriller, comedy and drama. The amount of movies released with these genres don’t vary a lot either by year and by month. Moreover, more adventure movies and horror movies are released in the recent two years. The number of foreign movies in theaters decreases sharply in recent years. Many documentary movies were released every year before 2012 but is no longer the case after that. In addition, starting from 2013, many more movies are released in October.
+Most released movies have genres such as romance, thriller, comedy and drama. The amount of movies released with these genres don’t vary a lot either by year and by month. Moreover, more adventure movies and horror movies are released in the recent two years. The number of foreign movies in theaters decreases sharply in recent years. Many documentary movies were released every year before 2012 but is no longer the case. 
 
 ```{r, fig.width=12, fig.height=8, fig.cap="Figure 3: Number of Movies Released by Month Based on Genres"}
 plot_3
@@ -88,17 +89,20 @@ plot_3
 
 There are slightly more drama movies released starting from August every year. More thriller and action movies are released from August to October. Many horror movies are released in September and October. Besides, there are significant more romance and adventure movies released in the last two months of a year.
 
-### Box Office vs. Genres
+### Box Office vs. Genre
 ```{r, fig.width=12, fig.height=6, fig.cap="Figure 4: Box Office vs. Genres"}
 plot_5
 ```
 
+A comparison of average box office for movies of different genres is presented in Figure 4. Despite large amount of movies released, drama movies and comedies averagely don’t have high box office compared with movies of other genres. Action movies, adventure movies, animation, family movies, fantasies, science fictions are types of movies that would have averagely higher box office and occasionally produce movies with extraordinarily high box office numbers. 
 
-### Voting Score vs. Genres
+### Voting Score vs. Genre
 
 ```{r, fig.width=12, fig.height=6, fig.cap="Figure 5: Voting Score vs. Genres"}
 plot_6
 ```
+
+Figure 5 shows the relationship between movies’ voting score and their genres. It is concluded that voting scores are roughly the same for all movies regardless of genre. Documentaries, animation, history movies tend to have higher voting average. Comedies and horror movies have lower voting scores compared with movies of other genres. Additionally, voting scores for drama movies vary a lot, from 1 all the way up to 10.  
 
 
 ### Gross Box Office vs. Voting Score
@@ -111,145 +115,156 @@ full_corr <- cor(final$gross, final$vote_average, use = "na.or.complete")
 
 Figure 6 plots each movie’s gross box office and voting score, and a fitted line has been added to the graph. It seems that most movies released between 2008 and 2018 have voting scores between 5 and 7.5. Despite relatively high voting scores, movies released in the recent three years have lower box office compared with movies released before. In addition, the fitted line suggests that high box office is associated with high voting score, but the correlation is only `r full_corr`, too small to form a convincing argument that these two variables have strong positive relationship.
 
-## Films with the most yearly gross box office
-
-### Gross Box Office vs. Voting Score
+## Movies with the Highest Yearly Box Office
 
 ```{r}
 kable(h_1 %>% dplyr::select(-genres) %>% distinct() %>% dplyr::select(title, year), "html") %>% 
   kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE, position = "float_right")
 ```
 
+In this section, discussions are around movies with the highest yearly box office. Movies are considered to be commercially successful if they have high box office, and this section would like to explore if certain characteristics are shared by these movies. The table on the right is a complete list of movies with the highest yearly box office from 2008 to 2018. 
 
-```{r fig.width=10, fig.height=7.5}
-grid.arrange(h_1_box, h_1_rate, nrow = 1, ncol = 2)
-```
+### Number of Movies Released Based on Genre
 
-```{r}
-h_1_box_vote
-```
+Figure 7 below is a bar graph presenting number of movies in each genre for movies with the highest yearly box office. Note that each movie can have one or more genres. The graph shows that most films with high yearly box office are action, adventure, science fiction and fantasy movies. This is especially true in the recent three years. Comedies, animation, family and drama movies used to generate high box office but can no longer do so. Even though there are many drama movies released every year, they seldom have very high box office. It is interesting to see that genres with movies of high box office don't match genres with most movies released. This suggests that producers can make more action, adventure, science fiction and fantasy movies to generate more profits.
 
-### By genre
-
-```{r}
+```{r, fig.cap="Figure 7: Number of Movies Released Based on Genres"}
 h_1_genre
 ```
 
+### Box Office vs. Voting Score
 
-```{r}
+Comparisons for box office and voting score for movies with the highest yearly box office are displayed in Figure 8. “Actual” refers to these movies' box office/voting score. “Monthly Average” is the average box office/voting score for movies released in the same year and month as movies with the highest yearly box office. “Monthly Average of All Years” is the average box office/voting score for movies with the same release month as movies with the highest yearly box office. “Yearly Average” means average box office for movies released in the same year as movies with the highest yearly box office. Note that movies in Figure 8 are listed in reversing time order. 
+
+```{r fig.width=10, fig.height=7.5, fig.cap="Figure 8: Comparsions for Box Office and Voting Score"}
+grid.arrange(h_1_box, h_1_rate, nrow = 1, ncol = 2)
+
+h_1_corr <- cor(h_1$gross, h_1$vote_average, use = "na.or.complete")
+```
+
+It is found that box office and voting scores for these movies are always a lot higher than averages. Besides, as indicated by fitted lines in two graphs, box office has increased dramatically from 2008 to 2018 but voting scores jump down at the same time. This relationship is found to be more explicit in Figure 9, which tries to find the direct association between box office and voting scores. The correlation between two variables is `r h_1_corr`, suggesting a moderate negative relationship between box office and voting scores, and Figure 9 shows that the negative correlation becomes very common after 2012. This might mean that consumers don’t care much about movie qualities nowadays and would like to purchase movie tickets if movies are of certain genres.
+
+```{r, fig.cap = "Figure 9: Relationship between Box Office and Voting Score"}
+h_1_box_vote
+```
+
+
+```{r fig.cap = "Figure 10: Box Office vs. Voting Score Based on Genres"}
 grid.arrange(h_1_box_genre, h_1_vote_genre, nrow = 1, ncol = 2)
 ```
 
-## Films with Monthly Highest Gross Box Office 
+Figure 10 is then created to better understand the relationship between box office and voting scores on genres. The previous speculation that people nowadays seems to pay more attention on movie genres rather than movie qualities is compatible with the graph. Although action, adventure, science fiction and fantasy movies have lower voting scores compared with movies of other genres, they have very high box office. In contrast, crime, drama and thriller movies have high ratings but they don't perform well in terms of gross box office.
+
+## Movies with the "Highest Monthly Box Office"
 
 ```{r}
-kable(h_2 %>% dplyr::select(-genres) %>% distinct() %>% dplyr::select(title, month) %>% arrange(month), "html") %>% 
+kable(h_2 %>% dplyr::select(-genres) %>% distinct() %>% dplyr::select(title, month, year) %>% arrange(month), "html") %>% 
   kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE, position = "float_right")
 ```
 
+Besides looking at movies with highest yearly box office, it's critical to examine movies by month, as seasonal factors play important roles in companies' decision of when to release films. Here, movies with the "highest monthly box office" are chosen by comparing movies released in same months. Movies with the "highest monthly box office" are shown in the table to the right.
 
-```{r fig.width=10, fig.height = 5}
-grid.arrange(h_2_box, h_2_rate, nrow = 1, ncol = 2)
-```
+### Number of Movies Released Based on Genre
 
-```{r}
+As described in Figure 11, action, adventure, science fiction and fantasy are popular genres at almost any time during the year. Drama, thriller, crime and horror movies are popular during mid-year. In addition, animation, comedy, romance and family movies are only popular during early months of the year (Jan-Apr). Note that each movie can have one of more genres.
+
+```{r, fig.cap="Figure 11: Number of Movies Released Based on Genres"}
 h_2_genre
 ```
 
-```{r}
-grid.arrange(h_2_box_genre, h_2_vote_genre, nrow = 1, ncol = 2)
+### Box Office vs. Voting Score
+
+```{r fig.width=10, fig.height = 5, fig.cap="Figure 12: Comparsions for Box Office and Voting Score"}
+grid.arrange(h_2_box, h_2_rate, nrow = 1, ncol = 2)
+
+h_2_corr <- cor(h_2$gross,h_2$vote_average, use = "na.or.complete")
 ```
 
-```{r}
+Comparisons for box office and voting score are displayed in Figure 12. “Actual” refers to these movies' box office/voting score. “Monthly Average” is the average box office/voting score for movies released in the same year and month as these movies. “Monthly Average of All Years” is the average box office/voting score for movies released in same months as movies with the "highest monthly box office". “Yearly Average” refers to average box office for movies released in the same year. 
+
+The figure directly shows that box office and voting scores for these movies are well above averages. Besides, two variables both have upward-sloping fitted lines, indicating that people are more willing to purchase movie tickets while at the same time having higher and higher expectations for movie qualities from January to December. 
+
+Each dot in figure 13 represents a movie with "the highest monthly box office", with release month and year labeled near the point. This graph explores how box office and voting scores may change by month. It shows that box office and voting scores don't vary much by month. In addition, there is a moderate positive association with a correlation of `r h_2_corr` between them. It can also be inferred that people in recent years don't put that much emphasis on movie qualities but movies still need to have better than average voting scores (around 7) to achieve high box office numbers.
+
+```{r fig.cap="Figure 13: Relationship between Box Office and Voting Score"}
 h_2_box_vote
 ```
 
-
-## Lowest Yearly Gross Box Office
-
-```{r}
-kable(l_1 %>% dplyr::select(-genres) %>% distinct() %>% dplyr::select(title, year), "html") %>% 
-  kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE, position = "float_right")
+```{r fig.cap="Figure 14: Box Office vs. Voting Score Based on Genres"}
+grid.arrange(h_2_box_genre, h_2_vote_genre, nrow = 1, ncol = 2)
 ```
 
+Figure 14 gives more details on box office and voting scores based on genres. Movies that are more commercially successful have lower voting scores, and this result is compatible with the previous conclusion that audiences are willing to purchase tickets if movies are of certain genres, as long as they have voting scores around 7. 
 
-```{r fig.width=10, fig.height=6.5}
-grid.arrange(l_1_box, l_1_rate, nrow = 1, ncol = 2)
-```
-
-### By genre
-
-```{r}
-l_1_genre
-```
-
-```{r}
-l_1_box_vote
-```
-
-```{r}
-grid.arrange(l_1_box_genre, l_1_vote_genre, nrow = 1, ncol = 2)
-```
-
-
-## Lowest Monthly Gross Box Office 
-
-```{r}
-kable(l_2 %>% dplyr::select(-genres) %>% distinct() %>% dplyr::select(title, month) %>% arrange(month), "html") %>% 
-  kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE, position = "float_right")
-```
-
-```{r fig.width = 10, fig.height=5}
-grid.arrange(l_2_box, l_2_rate, nrow = 1, ncol = 2)
-```
-
-```{r}
-l_2_genre
-```
-
-```{r}
-grid.arrange(l_2_box_genre, l_2_vote_genre, nrow = 1, ncol = 2)
-```
-
-```{r}
-l_2_box_vote
-```
-
-
-## Oscars
+## Oscars Awarded Movies
 
 ```{r}
 kable(oscars %>% dplyr::select(-genres) %>% distinct() %>% dplyr::select(title, year), "html") %>% 
   kable_styling(bootstrap_options = c("striped", "hover"), full_width = FALSE, position = "float_right")
 ```
 
+The last section of the report is committed to analyzing movies that were awarded Oscars Best Pictures. The award is given annually to a movie that is considered to be the cinematic masterpiece of the year as a compliment to its high quality, and it is considered the be one of the most prestigious achievements a movie can get. Audiences always would like to pay for movies of high quality, so it can be an alternative for movie makers to produce movies of similar qualities as awarded movies, helping them remaining competitive in the industry. As a result, this section studies characteristics owned by awarded movies through their genres, release months, gross box office and voting scores. 
 
-```{r fig.width=10}
+The table on the right shows all movies winning Oscars Best Picture from 2008 to 2017. 
+
+### Number of Awarded Movies Based on Genre and Released Month
+
+The left panel in Figure 15 shows that all awarded movies have the genre "drama," and generally movies are of genres such as history, romance, thriller and comedy. In addition, as displayed in the right panel, most awarded movies were released in November and October, with one released in June and another released in December.
+
+```{r fig.width=10, fig.cap="Figure 15: Number of Awarded Movies by Genre and by Released Month"}
 grid.arrange(oscars_genre, oscars_time, nrow = 1, ncol = 2)
 ```
 
-```{r fig.width=10, fig.height=5}
+### Box Office vs. Voting Score
+
+```{r fig.width=10, fig.height=5, fig.cap="Figure 16: Comparisons for Box Office and Voting Score"}
 grid.arrange(oscars_box, oscars_vote, nrow = 1, ncol = 2)
 ```
 
-```{r}
+Figure 16 compares box office and voting scores for awarded movies with other averages. As before, "Oscars" represents box office/voting scores of awarded movies. "Monthly Average" refers to average box office/voting scores for movies released in the same year and month as awarded movies. "Monthly Average of All Years" is the average box office/voting score for movies released in the same month as awarded movies. "Yearly Average" represents average box office for movies released in the same year as awarded movies. Finally, for comparison purposes, "Yearly Highest", which is the box office/voting score for movies with highest yearly box office that are discussed in previous sections, is added to graphs.
+
+Results show that while box office for awarded movies are very similar to, with sometimes higher than averages, they are significantly lower than yearly highest box office numbers. In addition, box office for awarded movies is gradually decreasing. The situation is completely different in terms of voting scores. Awarded movies have scores a lot higher than averages but they don't differ much from those of movies with highest box office. One explanation can be that their scales are different. Voting are more on the "popularity" side for movies with the highest yearly box office but are more on the "quality" side for awarded movies. Besides, the average voting scores for these movies is relatively constant, which is slightly below 7.5. The result is surprising, as awarded movies having similar voting scores to those with extraordinarily high box office, but their actual box office numbers are a lot lower.
+
+```{r fig.cap="Figure 17: Relationship between Box Office and Voting Score"}
 oscars_box_vote
+oscars_corr <- cor(oscars$gross, oscars$vote_average)
 ```
 
-## Most recent movies
+Figure 17 is devoted to explore a direct relationship between box office and voting scores for awarded movies. There is very slight positive correlation (`r oscars_corr`) between these two variables, while box office numbers and voting scores don't vary a lot for awarded movies. This can be interpreted in another way. If movies can have similar qualities as awarded movies, they are very likely to have box office around 50 million dollars. 
 
-```{r fig.height=12, fig.width=12}
+### Bonus - Predicting 2018 Oscars Best Picture [^4] {.tabset}
+
+[^4]: More interactive graphs for this section can be found at https://xlyu.shinyapps.io/MA615_final_project/ under "Oscars Best Picture Prediction".
+
+This bonus section tries to predict if any of the movies in theaters between 2018-04-06 and 2018-04-12 is qualified to win, or at least to be nominated as this year's Oscars Best Picture by assessing their release month, movie genres, box office and voting scores.
+
+The previous section gives the result that most awarded movies in the recent decade were released in November and October, with only one in June and another one in December. With this criterion, only "Blood Feast" can be the candidate. Movies with genres such as "drama", "history", "romance", "thriller" and "comedy" can be good candidates because they have similar genres as awarded movies. Movies with box office and voting scores very close those of awarded movies are considered to be good candidates, and generally, movies should have voting scores higher than 7. Figure 20 (under tab "Box Office & Voting Score") points out that movies such as "Game Night", "I Can Only Imagine" and "A Quiet Place" can be potential picks based on current voting scores and box office information. 
+
+Unfortunately, no single movie that was in theaters between 2018-04-06 and 2018-04-12 can satisfy all requirements on release month, movie genres, box office and voting scores. This doesn't mean that none of these movies will win this year's Oscars Best Picture, however, the possibility would be lower given characteristics of previous awarded movies.
+
+#### Release Month
+
+```{r fig.height=12, fig.width=12, fig.cap="Figure 18: Prediction - Release Month"}
 recent_time
 ```
 
-```{r fig.height = 12, fig.width=12}
+#### Movie Genre
+```{r fig.height = 12, fig.width=12, fig.cap="Figure 19: Prediction - Genres"}
 recent_genre
 ```
 
-```{r fig.height = 10, fig.width=12}
+#### Box Office & Voting Score
+```{r fig.height = 10, fig.width=12, fig.cap="Figure 20: Prediction - Box Office vs. Voting Score"}
 recent_oscars
 ```
 
+
 ## Conclusions
+
+Although Hollywood remains as one of the most important sectors in the global film market and US box office keeps hitting high, many challenges, such as record-low domestic ticket sales and competition from nontraditional video services like Netflix, are putting domestic film industry at risk. Production companies are therefore facing serious problems on how they shall stay competitive in the changing market and be ready for possible future movements in the industry. Trying to provide the industry with insights on how to cope with the situation, the study performs a "supply and demand" analysis for the domestic movie industry using data from the recent decade. It tries to survey types of movies released by production companies and kinds of movies that are demanded by audiences, and focus on how movie makers can adapt to audiences' changing tastes, producing movies that are both profitable and widely acclaimed. Movie genres are used as important indicators for movie supply, while box office and voting scores serve as measures for consumer preferences. 
+
+It has been found that viewers nowadays are less demanding for movie qualities, and they would like to purchase tickets if movies are of certain genres. Yet, this doesn't mean that movies of any quality can be produced. Only movies with higher than average voting scores (7/10) can earn higher than average, and sometimes, extraordinarily high box office. In addition, action, adventure, science fiction and fantasy movies are types of movies with huge popularity and more of these kinds shall be produced. These movies can be released at any time during the year and are supposed to have high box office. Moreover, it seems that high quality and high box office cannot be achieved at the same time. Movie makers need to make the decision on whether movies being produced are to be commercially successful (high box office) or aesthetically enjoyable (competing for Oscars Best Picture). Movies of qualities similar to Oscars awarded movies will have high voting scores, but their gross box office in general can only be around 50 million dollars, far lower than movies with high popularity. However, this is not definite. The movie industry is changing rapidly and movie makers shall experiment with different kinds of movies to find solutions to the dilemma, hopefully producing movies that are both commercially successful and aesthetically enjoyable. 
+
+Analyses in this report are not prefect and should be further developed. As mentioned in section "Data Description", limitations of the database [TMDb](https://www.themoviedb.org) can affect data accuracy and further studies are expected to use more reliable sources like [IMDb](https://www.imdb.com). Moreover, future studies are suggested to incorporate more movie information for analysis, such as keywords for plots, movie directors, main actors and actresses, to get better understanding of movie supply and demand in domestic film industry. Researchers can also look into how movie demand and supply change in each month for every year in the recent decade, using all available movie information. The Shiny App supplementing this report can serve as a good place to start.
 
 ## References
