@@ -1,5 +1,5 @@
 ---
-title: "Analysis of Supply and Demand in Domestic Film Industry"
+title: "Supply and Demand Analysis in Domestic Film Industry"
 author: "Xiru Lyu"
 date: "5/7/2018"
 output: 
