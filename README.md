@@ -16,6 +16,8 @@ It's recommended to run files in the following order to install required package
 
 4_Analysis.R
 
+R packages required for running codes are commented out in these files.
+
 Additionally, the file "movies_metadata.csv" inside folder "the-movies-dataset" contains TMDb information for movies released on or before July 2017, and it was downloaded from ["The Movies Dataset"](https://www.kaggle.com/rounakbanik/the-movies-dataset) at Kaggle. 
 
 ## Shiny App
